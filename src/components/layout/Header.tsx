@@ -1,0 +1,260 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAppContext } from "@/context/AppContext";
+
+export default function Header() {
+  const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  
+  // Estados Globales Simulación Login
+  const { userRole, setUserRole } = useAppContext();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        setUserRole(data.role); // 'admin' o 'user' según lo que devuelva
+        setLoginModalOpen(false);
+        setEmail("");
+        setPassword("");
+
+        // Redirección Automática
+        if (data.role === 'admin') {
+          router.push('/admin');
+        } else {
+          router.push('/user');
+        }
+      } else {
+        setLoginError(data.message || "Credenciales incorrectas.");
+      }
+    } catch {
+      setLoginError("Error conectando con el servidor de autenticación.");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      setUserRole(null);
+    } catch {
+      console.error("Error cerrando sesión");
+    }
+  };
+
+  return (
+    <>
+      <div className="bg-grecia-accent text-white text-[11px] md:text-xs py-2 px-4 flex justify-between items-center font-medium tracking-wider uppercase relative z-50 overflow-hidden">
+        <div className="hidden md:flex gap-4">
+          <a href="https://www.instagram.com/greciafashionstore/" target="_blank" rel="noopener noreferrer" className="hover:text-black transition">
+            <i className="fab fa-instagram"></i>
+          </a>
+          <a href="https://www.facebook.com/GreciaFashionStore" target="_blank" rel="noopener noreferrer" className="hover:text-black transition">
+            <i className="fab fa-facebook-f"></i>
+          </a>
+        </div>
+        <div id="top-banner-text" className="transition-opacity duration-500 mx-auto md:mx-0">
+          🚚 Envíos rápidos y seguros en New Jersey
+        </div>
+      </div>
+
+      <header className="sticky top-0 z-40 bg-black/95 border-b border-gray-900 backdrop-blur-md shadow-sm transition-all duration-300">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex justify-between items-center">
+            <button className="md:hidden text-white text-xl" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              <i className="fas fa-bars"></i>
+            </button>
+
+            <Link href="/" className="flex flex-col items-center group">
+              <span className="text-2xl md:text-3xl font-serif font-bold transition-colors flex items-center gap-2">
+                <span className="text-grecia-accent italic">Grecia</span>
+                <span className="text-white">Fashion Store</span>
+              </span>
+              <span className="text-[9px] md:text-[10px] tracking-[0.4em] uppercase text-gray-400 mt-1">Boutique</span>
+            </Link>
+
+            <nav className="hidden md:flex space-x-8 items-center">
+              <Link href="#categories" className="text-xs font-semibold text-gray-300 hover:text-grecia-accent tracking-widest uppercase transition">Líneas</Link>
+              <Link href="#store" className="text-xs font-semibold text-grecia-accent hover:text-white tracking-widest uppercase transition">Catálogo</Link>
+              <Link href="#testimonials" className="text-xs font-semibold text-gray-300 hover:text-grecia-accent tracking-widest uppercase transition">Reseñas</Link>
+              <Link href="#visit-us" className="text-xs font-semibold text-gray-300 hover:text-grecia-accent tracking-widest uppercase transition">Visítanos</Link>
+            </nav>
+
+            <div className="flex items-center space-x-5">
+              {userRole ? (
+                <div className="flex items-center gap-4">
+                  {userRole === "admin" ? (
+                    <span className="text-white text-xs hidden md:inline-block border border-gray-800 px-3 py-1 rounded">
+                      Hola, <span className="text-grecia-accent font-bold">Admin</span>
+                    </span>
+                  ) : (
+                    <Link href="/user" className="text-white text-xs hidden md:inline-block border border-gray-800 px-3 py-1 rounded hover:border-grecia-accent transition" title="Mi Dashboard">
+                      Hola, <span className="font-bold">Cliente</span> <i className="fas fa-chevron-right text-[10px] ml-1"></i>
+                    </Link>
+                  )}
+
+                  {userRole === "admin" && (
+                    <Link href="/admin" className="text-grecia-accent hover:text-white transition text-sm flex items-center gap-1 bg-black/50 border border-gray-800 px-3 py-1 rounded-full cursor-pointer" title="Panel de Administrador">
+                      <i className="fas fa-shield-alt text-xs"></i> Portal Admin
+                    </Link>
+                  )}
+
+                  {userRole === "user" && (
+                    <Link href="/user" className="text-gray-300 hover:text-white transition text-sm flex items-center gap-1 bg-black/50 border border-gray-800 px-3 py-1 rounded-full cursor-pointer" title="Mi Panel">
+                      <i className="fas fa-user-circle text-xs"></i> Mi Perfil
+                    </Link>
+                  )}
+
+                  <button onClick={handleLogout} className="text-gray-500 hover:text-red-500 transition text-sm flex items-center gap-1" title="Cerrar Sesión">
+                    <i className="fas fa-sign-out-alt"></i>Salir
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => setLoginModalOpen(true)} className="text-white hover:text-grecia-accent transition" title="Iniciar Sesión">
+                  <i className="fas fa-user text-xl" id="user-icon"></i>
+                </button>
+              )}
+
+              <button className="text-white hover:text-grecia-accent transition relative group" onClick={() => setCartOpen(true)}>
+                <i className="fas fa-shopping-bag text-xl"></i>
+                <span id="cart-count" className="absolute -top-1 -right-2 bg-grecia-accent text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center transform group-hover:scale-110 transition">0</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Menu */}
+        <div className={`fixed inset-0 bg-black z-50 transform transition-transform duration-300 flex flex-col justify-center items-center space-y-8 md:hidden ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
+          <button className="absolute top-6 right-6 text-2xl text-white hover:text-grecia-accent" onClick={() => setMobileMenuOpen(false)}>
+            <i className="fas fa-times"></i>
+          </button>
+          <Link href="#home" className="text-2xl font-serif text-white hover:text-grecia-accent transition" onClick={() => setMobileMenuOpen(false)}>Inicio</Link>
+          <Link href="#categories" className="text-2xl font-serif text-white hover:text-grecia-accent transition" onClick={() => setMobileMenuOpen(false)}>Líneas</Link>
+          <Link href="#store" className="text-2xl font-serif text-white hover:text-grecia-accent transition" onClick={() => setMobileMenuOpen(false)}>Catálogo</Link>
+          <Link href="#testimonials" className="text-2xl font-serif text-white hover:text-grecia-accent transition" onClick={() => setMobileMenuOpen(false)}>Reseñas</Link>
+          <Link href="#visit-us" className="text-2xl font-serif text-white hover:text-grecia-accent transition" onClick={() => setMobileMenuOpen(false)}>Visítanos</Link>
+
+          {userRole ? (
+            <div className="flex flex-col items-center gap-6 mt-4">
+              {userRole === "admin" ? (
+                <Link href="/admin" className="text-xl font-serif text-grecia-accent hover:text-white transition border-b border-gray-800 pb-2 flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
+                  <i className="fas fa-shield-alt"></i> Portal Admin
+                </Link>
+              ) : (
+                <Link href="/user" className="text-xl font-serif text-white hover:text-grecia-accent transition border-b border-gray-800 pb-2 flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
+                  <i className="fas fa-user-circle"></i> Mi Perfil
+                </Link>
+              )}
+              <button onClick={() => { handleLogout(); setMobileMenuOpen(false); }} className="text-lg font-serif text-red-500/80 hover:text-red-400 transition flex items-center gap-2">
+                <i className="fas fa-sign-out-alt"></i> Cerrar Sesión
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => { setLoginModalOpen(true); setMobileMenuOpen(false); }} className="text-2xl font-serif text-gray-400 hover:text-grecia-accent transition border border-gray-800 rounded px-8 py-3 mt-4">
+              Iniciar Sesión Libre
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Cart Sidebar Placeholder */}
+      <div id="cart-sidebar" className={`fixed inset-y-0 right-0 w-full md:w-[400px] bg-black border-l border-gray-800 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col ${cartOpen ? "translate-x-0" : "translate-x-full"}`}>
+        <div className="p-6 border-b border-gray-800 flex justify-between items-center bg-[#0a0a0a]">
+          <h2 className="font-serif text-lg font-bold text-white">Tu Bolsa de Compras</h2>
+          <button onClick={() => setCartOpen(false)} className="text-gray-400 hover:text-grecia-accent transition"><i className="fas fa-times text-xl"></i></button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-black flex flex-col items-center justify-center text-gray-600">
+          <i className="fas fa-shopping-basket text-4xl mb-3 opacity-20"></i>
+          <p className="text-sm">Tu bolsa está vacía (Modo Estático)</p>
+        </div>
+        <div className="p-6 border-t border-gray-800 bg-[#0a0a0a]">
+          <div className="flex justify-between mb-2 text-sm text-gray-400">
+            <span>Subtotal:</span>
+            <span>$0</span>
+          </div>
+          <div className="flex justify-between mb-6 text-xl font-serif font-bold text-white">
+            <span>Total:</span>
+            <span>$0</span>
+          </div>
+          <button className="w-full bg-white text-black py-4 font-bold hover:bg-grecia-accent hover:text-white transition flex items-center justify-center gap-2 shadow-lg rounded-sm uppercase tracking-widest text-sm">
+            <i className="fab fa-whatsapp text-lg"></i> Comprar por WhatsApp
+          </button>
+          <p className="text-[10px] text-center text-gray-500 mt-3"><i className="fas fa-lock flex-shrink-0 mr-1"></i> Compra segura y protegida</p>
+        </div>
+      </div>
+      {cartOpen && <div onClick={() => setCartOpen(false)} className="fixed inset-0 bg-black/80 z-40 backdrop-blur-sm transition-opacity"></div>}
+
+      {/* Login Modals */}
+      {loginModalOpen && (
+        <div className="fixed inset-0 z-[60] popup-overlay flex items-center justify-center p-4">
+          <div className="bg-grecia-card border border-gray-800 rounded-lg shadow-2xl max-w-sm w-full p-8 relative animate-slide-up">
+            <button onClick={() => setLoginModalOpen(false)} className="absolute top-4 right-4 text-gray-500 hover:text-white z-10 transition"><i className="fas fa-times text-xl"></i></button>
+            <div className="text-center mb-6">
+              <i className="fas fa-user-circle text-5xl text-white mb-4"></i>
+              <h3 className="font-serif text-2xl font-bold text-white">Bienvenido(a)</h3>
+              <p className="text-xs text-gray-400 mt-2">Acceso a clientes o personal administrativo</p>
+
+              <div className="mt-4 p-3 bg-gray-900/50 rounded border border-gray-800 text-left">
+                <p className="text-[10px] text-gray-400 mb-1 font-bold">CREDENCIALES DEMO:</p>
+                <p className="text-[10px] text-gray-500">🧑‍💼 Admin: <span className="text-grecia-accent">admin@grecia.com</span> / <span className="text-white">admin123</span></p>
+                <p className="text-[10px] text-gray-500">🛍️ Cliente: <span className="text-grecia-accent">cliente@grecia.com</span> / <span className="text-white">1234</span></p>
+              </div>
+            </div>
+
+            <form onSubmit={handleLogin} className="space-y-4">
+              {loginError && (
+                <div className="bg-red-500/10 border border-red-500/50 text-red-400 text-xs p-2 rounded text-center">
+                  {loginError}
+                </div>
+              )}
+              <input
+                type="email"
+                placeholder="Correo electrónico"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full bg-black border border-gray-800 text-white px-4 py-3 rounded focus:outline-none focus:border-grecia-accent transition"
+              />
+              <input
+                type="password"
+                placeholder="Contraseña"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full bg-black border border-gray-800 text-white px-4 py-3 rounded focus:outline-none focus:border-grecia-accent transition"
+              />
+              <button type="submit" className="w-full bg-grecia-accent text-white py-3 font-medium hover:bg-white hover:text-black transition shadow-[0_0_15px_rgba(255,42,122,0.4)] uppercase tracking-wider text-sm rounded mt-2">
+                Continuar
+              </button>
+            </form>
+            <div className="mt-6 text-center">
+              <p className="text-[10px] text-gray-500"><i className="fas fa-shield-alt mr-1"></i> El sistema detectará automáticamente tu rol seguro</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Componentes Flotantes (En Próximas Fases) */}
+      {/* <CartSidebar isOpen={cartOpen} onClose={() => setCartOpen(false)} /> */}
+      {/* <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} /> */}
+    </>
+  );
+}
