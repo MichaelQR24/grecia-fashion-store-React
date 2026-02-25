@@ -36,7 +36,10 @@ export async function PUT(request: Request, context: { params: Promise<{ id: str
                 category: updates.category,
                 stock: Number(updates.stock),
                 image: updates.image,
-                colors: updates.colors || []
+                colors: updates.colors || [],
+                is_bestseller: updates.is_bestseller || false,
+                is_new: updates.is_new || false,
+                is_offer: updates.is_offer || false
             })
             .eq('id', id)
             .select()

@@ -11,6 +11,9 @@ export type Product = {
     stock: number;
     image: string;
     colors?: string[]; // Lista de códigos Hexadecimales
+    is_offer?: boolean;
+    is_new?: boolean;
+    is_bestseller?: boolean;
 };
 
 export type CartItem = Product & {

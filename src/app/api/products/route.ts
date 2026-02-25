@@ -45,7 +45,10 @@ export async function POST(request: Request) {
                 category: newProductData.category,
                 stock: Number(newProductData.stock),
                 image: newProductData.image,
-                colors: newProductData.colors || []
+                colors: newProductData.colors || [],
+                is_bestseller: newProductData.is_bestseller || false,
+                is_new: newProductData.is_new || false,
+                is_offer: newProductData.is_offer || false
             }])
             .select()
             .single();
