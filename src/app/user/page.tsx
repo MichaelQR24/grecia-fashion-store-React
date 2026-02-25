@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import LogoutButton from "@/components/ui/LogoutButton";
+import ProfileForm from "./ProfileForm";
 
 export default async function UserDashboard() {
     // 1. Verificación Server-Side de Sesión con Supabase
@@ -40,6 +41,10 @@ export default async function UserDashboard() {
                         </h1>
                         <p className="text-sm text-gray-500">Bienvenida a tu espacio personal, {userEmail}</p>
                     </div>
+
+                    <a href="/" className="px-5 py-2.5 bg-gray-900 border border-gray-800 text-white hover:bg-white hover:text-black transition rounded hover:shadow-[0_0_15px_rgba(255,255,255,0.3)] text-xs uppercase tracking-wider font-bold shadow-lg flex items-center gap-2">
+                        <i className="fas fa-arrow-left"></i> Volver a Tienda
+                    </a>
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -68,45 +73,23 @@ export default async function UserDashboard() {
                         </div>
                     </div>
 
-                    {/* Historial de Compras (Mock) */}
+                    {/* Tablero Principal (Perfil + Pedidos) */}
                     <div className="md:col-span-2 space-y-6">
+
+                        {/* Componente Creado Expresamente Para Llenar Metadatos */}
+                        <ProfileForm initialData={user?.user_metadata || {}} />
+
+                        {/* Historial de Compras (En Blanco Inicialmente) */}
                         <div className="bg-[#111] border border-gray-800 rounded-lg p-8">
                             <h2 className="text-xl font-serif font-bold text-white mb-6 border-b border-gray-800 pb-4">
                                 <i className="fas fa-shopping-bag text-gray-500 mr-2"></i> Mis Pedidos Recientes
                             </h2>
-                            <div className="space-y-4">
-                                {/* Pedido Mock 1 */}
-                                <div className="p-4 border border-gray-800 rounded-lg flex justify-between items-center hover:bg-white/5 transition">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-gray-900 rounded flex items-center justify-center text-gray-500">
-                                            <i className="fas fa-gem"></i>
-                                        </div>
-                                        <div>
-                                            <p className="text-white font-medium text-sm">Pedido #2491</p>
-                                            <p className="text-xs text-gray-500">Completado el 12 de feb, 2026</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-grecia-accent font-bold text-sm">$85.00</p>
-                                        <p className="text-[10px] text-green-500 uppercase tracking-wider">Entregado</p>
-                                    </div>
+                            <div className="text-center py-10 text-gray-500">
+                                <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-800">
+                                    <i className="fas fa-box-open text-2xl"></i>
                                 </div>
-                                {/* Pedido Mock 2 */}
-                                <div className="p-4 border border-gray-800 rounded-lg flex justify-between items-center hover:bg-white/5 transition">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-gray-900 rounded flex items-center justify-center text-gray-500">
-                                            <i className="fas fa-fire"></i>
-                                        </div>
-                                        <div>
-                                            <p className="text-white font-medium text-sm">Pedido #2405</p>
-                                            <p className="text-xs text-gray-500">Completado el 05 de ene, 2026</p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-grecia-accent font-bold text-sm">$160.00</p>
-                                        <p className="text-[10px] text-green-500 uppercase tracking-wider">Entregado</p>
-                                    </div>
-                                </div>
+                                <p className="font-medium text-white mb-1">Aún no tienes pedidos registrados</p>
+                                <p className="text-xs">Tus compras futuras se listarán cronológicamente aquí.</p>
                             </div>
                         </div>
 

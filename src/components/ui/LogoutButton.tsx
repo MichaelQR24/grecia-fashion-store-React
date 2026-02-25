@@ -3,16 +3,17 @@
 import { useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
 
+import { createClient } from "@/utils/supabase/client";
+
 export default function LogoutButton() {
-    const router = useRouter();
     const { setUserRole } = useAppContext();
 
     const handleLogout = async () => {
         try {
-            await fetch("/api/auth/logout", { method: "POST" });
+            const supabase = createClient();
+            await supabase.auth.signOut();
             setUserRole(null);
-            router.push("/");
-            router.refresh();
+            window.location.href = '/';
         } catch {
             console.error("Error cerrando sesión");
         }

@@ -5,7 +5,7 @@ export async function GET(request: Request) {
     const requestUrl = new URL(request.url);
     const code = requestUrl.searchParams.get('code');
     // Si queremos redirigir a un lugar distinto por default (ej: el dashboard del user)
-    const next = requestUrl.searchParams.get('next') ?? '/user';
+    const next = requestUrl.searchParams.get('next') ?? '/';
 
     if (code) {
         const supabase = await createClient();

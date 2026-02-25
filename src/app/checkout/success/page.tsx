@@ -1,0 +1,47 @@
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+export default function CheckoutSuccessPage() {
+    const [statusText, setStatusText] = useState("Procesando Confirmación...");
+
+    useEffect(() => {
+        // En una app completa con BD este paso llamaría a un /api/capture-order 
+        // para mover los items del carrito virtual a una tabla SQL 'orders_history' real
+        const timer = setTimeout(() => {
+            setStatusText("¡Transacción Completada Exitosamente! 🎉");
+        }, 1500);
+        return () => clearTimeout(timer);
+    }, []);
+
+    return (
+        <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 bg-black text-center animate-fade-in-up mt-20">
+            <div className="w-24 h-24 bg-green-900/40 rounded-full flex items-center justify-center mb-8 border border-green-500 m-auto">
+                <i className="fas fa-check text-4xl text-green-500 animate-pulse-slow"></i>
+            </div>
+
+            <h1 className="text-3xl md:text-5xl font-serif text-white mb-4">
+                {statusText}
+            </h1>
+
+            <p className="text-gray-400 max-w-xl mx-auto mb-12 text-sm md:text-base leading-relaxed">
+                Tu pago ha sido procesado de manera segura. Te hemos enviado un correo electrónico con los detalles de la compra y el número de seguimiento. Gracias por confiar en Grecia Fashion Store.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <Link
+                    href="/user"
+                    className="w-full sm:w-auto px-8 py-3 bg-[#111] border border-gray-700 hover:border-white text-white rounded transition uppercase tracking-widest text-xs font-bold"
+                >
+                    <i className="fas fa-receipt mr-2"></i> Ver Mis Pedidos
+                </Link>
+
+                <Link
+                    href="/"
+                    className="w-full sm:w-auto px-8 py-3 bg-white text-black hover:bg-grecia-accent hover:text-white rounded transition uppercase tracking-widest text-xs font-bold"
+                >
+                    Volver a la Tienda
+                </Link>
+            </div>
+        </div>
+    );
+}

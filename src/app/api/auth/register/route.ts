@@ -3,12 +3,17 @@ import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request: Request) {
     try {
-        const { email, password } = await request.json();
+        const { email, password, phone } = await request.json();
         const supabase = await createClient();
 
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
+            options: {
+                data: {
+                    phone: phone || '',
+                }
+            }
         });
 
         if (error) {
@@ -28,7 +33,7 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
             success: true,
-            message: 'Registro exitoso. Ya puedes iniciar sesión.',
+            message: '✅ ¡Cuenta creada exitosamente! Revisa tu bandeja de entrada (y la carpeta de Correo no deseado/Spam) para verificar tu enlace antes de iniciar sesión.',
             role: 'user'
         });
     } catch {

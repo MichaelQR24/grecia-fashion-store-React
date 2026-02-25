@@ -30,48 +30,61 @@ export default function Header() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
 
-    const endpoint = isLoginMode ? "/api/auth" : "/api/auth/register";
-
     try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+      const supabase = createClient();
+
+      if (!isLoginMode) {
+        // Registro
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (error) {
+          setLoginError(error.message);
+        } else {
+          setLoginError("✅ ¡Registro exitoso! Por favor revisa tu correo.");
+          setIsLoginMode(true);
+        }
+        return;
+      }
+
+      // Login
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      const data = await res.json();
+      if (error || !data.user) {
+        setLoginError("Credenciales incorrectas o servidor fallando.");
+        return;
+      }
 
-      if (res.ok && data.success) {
-        if (!isLoginMode) {
-          // Registro exitoso, pasar a modo login
-          setLoginError("✅ ¡Registro exitoso! Ya puedes iniciar sesión.");
-          setIsLoginMode(true);
-          return;
-        }
+      // Login Exitoso (Cookies ya fueron seteadas por Supabase JS)
+      const role = data.user.email === 'greciafashionstore2@gmail.com' ? 'admin' : 'user';
+      setUserRole(role);
 
-        // Login Exitoso
-        setUserRole(data.role); // 'admin' o 'user' según lo que devuelva
-        setLoginModalOpen(false);
-        setEmail("");
-        setPassword("");
+      setLoginModalOpen(false);
+      setEmail("");
+      setPassword("");
+      setPhone("");
 
-        // Redirección Automática
-        if (data.role === 'admin') {
-          router.push('/admin');
-        } else {
-          router.push('/user');
-        }
+      // Redirección Automática con Refresco de Estado (Hard Navigate)
+      if (role === 'admin') {
+        window.location.href = '/admin';
       } else {
-        setLoginError(data.message || "Credenciales incorrectas.");
+        window.location.href = '/';
       }
     } catch {
-      setLoginError("Error conectando con el servidor de autenticación.");
+      setLoginError("Error conectando con el servidor local.");
     }
   };
 
@@ -92,10 +105,12 @@ export default function Header() {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      const supabase = createClient();
+      await supabase.auth.signOut();
       setUserRole(null);
+      window.location.href = '/';
     } catch {
-      console.error("Error cerrando sesión");
+      console.error("Error cerrando sesión local");
     }
   };
 
@@ -257,6 +272,16 @@ export default function Header() {
                   required
                   className="w-full bg-black border border-gray-800 text-white px-4 py-3 rounded focus:outline-none focus:border-grecia-accent transition"
                 />
+                {!isLoginMode && (
+                  <input
+                    type="tel"
+                    placeholder="Número de Teléfono"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                    className="w-full bg-black border border-gray-800 text-white px-4 py-3 rounded focus:outline-none focus:border-grecia-accent transition"
+                  />
+                )}
                 <input
                   type="password"
                   placeholder="Contraseña segura"
@@ -265,8 +290,23 @@ export default function Header() {
                   required
                   className="w-full bg-black border border-gray-800 text-white px-4 py-3 rounded focus:outline-none focus:border-grecia-accent transition"
                 />
+
+                <div className="flex items-start gap-3 mt-4 bg-gray-900/40 p-3 rounded border border-gray-800">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    required
+                    checked={acceptTerms}
+                    onChange={(e) => setAcceptTerms(e.target.checked)}
+                    className="mt-1 flex-shrink-0 w-4 h-4 accent-grecia-accent bg-black border-gray-700 rounded cursor-pointer"
+                  />
+                  <label htmlFor="terms" className="text-[10px] text-gray-400 leading-tight cursor-pointer">
+                    Acepto los <span className="text-grecia-accent hover:underline">Términos y Condiciones</span>. Entiendo y estoy de acuerdo en que todas las compras realizadas en esta plataforma son estrictamente para <strong>recojo físico y presencial en la Boutique</strong> (Sin servicio de entrega a docimilio de terceros).
+                  </label>
+                </div>
+
                 <button type="submit" className="w-full bg-grecia-accent text-white py-3 font-medium hover:bg-white hover:text-black transition shadow-[0_0_15px_rgba(255,42,122,0.4)] uppercase tracking-wider text-sm rounded mt-2">
-                  {isLoginMode ? "Ingresar" : "Registrarse"}
+                  {isLoginMode ? "Ingresar" : "Registrarse y Aceptar"}
                 </button>
               </form>
 

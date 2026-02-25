@@ -1,9 +1,10 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createClient } from "@/utils/supabase/client";
 
 // Tipos requeridos
-export type Product = {
+export interface Product {
     id: string;
     name: string;
     price: number;
@@ -14,17 +15,25 @@ export type Product = {
     is_offer?: boolean;
     is_new?: boolean;
     is_bestseller?: boolean;
-};
+}
 
-export type CartItem = Product & {
+export interface CartItem extends Product {
     quantity: number;
-};
+}
+
+export interface UserProfile {
+    email?: string;
+    full_name?: string;
+    id?: string;
+}
 
 export type UserRole = "admin" | "user" | null;
 
 interface AppContextType {
     userRole: UserRole;
     setUserRole: (role: UserRole) => void;
+    user: UserProfile | null;
+    setUser: (user: UserProfile | null) => void;
     products: Product[];
     addProduct: (product: Omit<Product, 'id'>) => Promise<boolean>;
     updateProduct: (id: string, product: Omit<Product, 'id'>) => Promise<boolean>;
@@ -43,6 +52,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
     const [userRole, setUserRole] = useState<UserRole>(null);
+    const [user, setUser] = useState<UserProfile | null>(null);
     const [products, setProducts] = useState<Product[]>([]);
     const [cart, setCart] = useState<CartItem[]>([]);
 
@@ -62,8 +72,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
             }
         };
         load();
-
         return () => { isMounted = false; }
+    }, []);
+
+    // Sincronizar Estado de Sesión con Supabase en el Cliente
+    useEffect(() => {
+        const supabase = createClient();
+
+        // Obtener estado inicial al refrescar la página
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+                setUser({ email: session.user.email, id: session.user.id, ...session.user.user_metadata });
+                setUserRole(session.user.email === 'greciafashionstore2@gmail.com' ? 'admin' : 'user');
+            } else {
+                setUser(null);
+                setUserRole(null);
+            }
+        });
+
+        // Escuchar cambios futuros de estado (Login, Logout)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+                setUser({ email: session.user.email, id: session.user.id, ...session.user.user_metadata });
+                setUserRole(session.user.email === 'greciafashionstore2@gmail.com' ? 'admin' : 'user');
+            } else {
+                setUser(null);
+                setUserRole(null);
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     // Metodo manual de Refresh
@@ -195,7 +233,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     return (
         <AppContext.Provider value={{
-            userRole, setUserRole,
+            userRole, setUserRole, user, setUser,
             products, addProduct, updateProduct, deleteProduct, refreshProducts,
             cart, addToCart, removeFromCart, updateCartItemQuantity, clearCart
         }}>
