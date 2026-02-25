@@ -7,7 +7,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
 
 export async function POST(req: Request) {
     try {
-        const { items, customerEmail, destinationUrl } = await req.json();
+        const { items, customerEmail, userId, destinationUrl } = await req.json();
 
         if (!items || items.length === 0) {
             return NextResponse.json({ error: 'El carrito está vacío.' }, { status: 400 });
@@ -33,6 +33,7 @@ export async function POST(req: Request) {
             line_items: lineItems,
             mode: 'payment',
             customer_email: customerEmail || undefined,
+            client_reference_id: userId || undefined,
             success_url: `${destinationUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${destinationUrl}/checkout/canceled`,
             submit_type: 'pay',

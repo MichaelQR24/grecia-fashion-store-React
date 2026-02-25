@@ -30,6 +30,7 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                 body: JSON.stringify({
                     items: cart,
                     customerEmail: user?.email, // Si está logueado, pre-llenar email en Stripe
+                    userId: user?.id, // Enviar ID de Supabase
                     destinationUrl: window.location.origin
                 }),
             });

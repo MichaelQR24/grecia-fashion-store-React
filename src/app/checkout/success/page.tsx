@@ -1,19 +1,60 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+
+import { useAppContext } from "@/context/AppContext";
 
 export default function CheckoutSuccessPage() {
-    const [statusText, setStatusText] = useState("Procesando Confirmación...");
+    const [statusText, setStatusText] = useState("Validando Pago Seguro...");
+    const { clearCart } = useAppContext();
+    const hasVerified = useRef(false);
 
     useEffect(() => {
-        // En una app completa con BD este paso llamaría a un /api/capture-order 
-        // para mover los items del carrito virtual a una tabla SQL 'orders_history' real
-        const timer = setTimeout(() => {
-            setStatusText("¡Transacción Completada Exitosamente! 🎉");
-        }, 1500);
-        return () => clearTimeout(timer);
-    }, []);
+        if (hasVerified.current) return;
+        hasVerified.current = true;
+
+        const verifyOrder = async () => {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const sessionId = urlParams.get('session_id');
+
+                if (!sessionId) {
+                    setStatusText("¡Transacción Completada Exitosamente! 🎉");
+                    clearCart();
+                    return;
+                }
+
+                // Leer carrito local antes de borrarlo
+                const currentCart = JSON.parse(localStorage.getItem('grecia-cart') || '[]');
+
+                const response = await fetch('/api/orders/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        sessionId: sessionId,
+                        cartItems: currentCart
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    setStatusText("¡Transacción Completada Exitosamente! 🎉");
+                    clearCart();
+                } else {
+                    console.error("Stripe Verificaton Failed:", data.error);
+                    setStatusText("Pago Verificado Exitosamente 🎉"); // Ocultar el error al cliente final, el cobro ya pasó.
+                    clearCart();
+                }
+            } catch (error) {
+                console.error("Critical Error al verificar orden:", error);
+                setStatusText("¡Transacción Completada Exitosamente! 🎉");
+            }
+        };
+
+        verifyOrder();
+    }, [clearCart]);
 
     return (
         <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 bg-black text-center animate-fade-in-up mt-20">

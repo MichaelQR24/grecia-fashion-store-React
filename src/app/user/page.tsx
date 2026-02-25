@@ -16,6 +16,20 @@ export default async function UserDashboard() {
         userRole = user.email === 'greciafashionstore2@gmail.com' ? 'admin' : 'user';
     }
 
+    // 1.5 Obtener Historial de Pedidos del Usuario
+    let orders: any[] = [];
+    if (user) {
+        const { data, error } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+        if (data && !error) {
+            orders = data;
+        }
+    }
+
     // 2. Si no hay usuario de Supabase, muestra acceso denegado
     if (!user) {
         return (
@@ -79,18 +93,48 @@ export default async function UserDashboard() {
                         {/* Componente Creado Expresamente Para Llenar Metadatos */}
                         <ProfileForm initialData={user?.user_metadata || {}} />
 
-                        {/* Historial de Compras (En Blanco Inicialmente) */}
+                        {/* Historial de Compras */}
                         <div className="bg-[#111] border border-gray-800 rounded-lg p-8">
                             <h2 className="text-xl font-serif font-bold text-white mb-6 border-b border-gray-800 pb-4">
                                 <i className="fas fa-shopping-bag text-gray-500 mr-2"></i> Mis Pedidos Recientes
                             </h2>
-                            <div className="text-center py-10 text-gray-500">
-                                <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-800">
-                                    <i className="fas fa-box-open text-2xl"></i>
+                            {orders && orders.length > 0 ? (
+                                <div className="space-y-4">
+                                    {orders.map((order) => (
+                                        <div key={order.id} className="bg-black border border-gray-800 rounded p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                            <div>
+                                                <p className="text-sm text-gray-400 mb-1">Orden <span className="text-gray-500 text-xs">#{order.id.split('-')[0]}</span></p>
+                                                <p className="text-white font-bold">${order.total_amount.toFixed(2)} USD</p>
+                                                <p className="text-xs text-gray-500 mt-1">{new Date(order.created_at).toLocaleDateString()}</p>
+                                            </div>
+
+                                            <div className="flex -space-x-3">
+                                                {/* Mostrar miniaturas de los items comprados */}
+                                                {(order.cart_items as any[]).slice(0, 4).map((item: any, idx: number) => (
+                                                    <img key={idx} src={item.image} alt={item.name} className="w-10 h-10 rounded-full border border-gray-600 object-cover relative" style={{ zIndex: 10 - idx }} title={item.name} />
+                                                ))}
+                                                {(order.cart_items as any[]).length > 4 && (
+                                                    <div className="w-10 h-10 rounded-full border border-gray-800 bg-gray-900 flex items-center justify-center text-xs text-gray-400 relative" style={{ zIndex: 1 }}>
+                                                        +{(order.cart_items as any[]).length - 4}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div>
+                                                <span className="px-3 py-1 bg-green-900/30 text-green-500 text-xs border border-green-800 rounded-full">Completado</span>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <p className="font-medium text-white mb-1">Aún no tienes pedidos registrados</p>
-                                <p className="text-xs">Tus compras futuras se listarán cronológicamente aquí.</p>
-                            </div>
+                            ) : (
+                                <div className="text-center py-10 text-gray-500">
+                                    <div className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-800">
+                                        <i className="fas fa-box-open text-2xl"></i>
+                                    </div>
+                                    <p className="font-medium text-white mb-1">Aún no tienes pedidos registrados</p>
+                                    <p className="text-xs">Tus compras futuras se listarán cronológicamente aquí.</p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Favoritos */}
