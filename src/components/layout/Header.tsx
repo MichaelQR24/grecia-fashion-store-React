@@ -24,7 +24,7 @@ export default function Header() {
   }, []);
 
   // Estados Globales Simulación Login y Carrito
-  const { userRole, setUserRole, cart } = useAppContext();
+  const { user, userRole, setUserRole, cart } = useAppContext();
 
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
 
@@ -163,7 +163,7 @@ export default function Header() {
                   </span>
                 ) : (
                   <Link href="/user" className="text-white text-xs hidden md:inline-block border border-gray-800 px-3 py-1 rounded hover:border-grecia-accent transition" title="Mi Dashboard">
-                    Hola, <span className="font-bold">Cliente</span> <i className="fas fa-chevron-right text-[10px] ml-1"></i>
+                    Hola, <span className="font-bold capitalize">{user?.full_name || user?.email?.split('@')[0] || "Cliente"}</span> <i className="fas fa-chevron-right text-[10px] ml-1"></i>
                   </Link>
                 )}
 
