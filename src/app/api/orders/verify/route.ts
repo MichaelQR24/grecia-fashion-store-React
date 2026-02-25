@@ -27,8 +27,16 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'La sesión no tiene un usuario asociado' }, { status: 400 });
         }
 
-        // 2. Conectar a Supabase (Validando con el usuario actualmente logueado para RLS)
-        const supabase = await createClient();
+        // 2. Conectar a Supabase como Administrador Server-Side (Service Role)
+        // Ya que los Webhooks de Stripe suceden "en el fondo", Next.js no tiene las Cookies del navegador del usuario.
+        // Usamos `@supabase/supabase-js` directo en lugar del ayudante de SSR para forzar el registro y salto de RLS
+        const { createClient } = require('@supabase/supabase-js');
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        // Para entornos Server-Side seguros idealmente usamos SUPABASE_SERVICE_ROLE_KEY.
+        // Al no tenerla configurada, usamos la ANON_KEY localmente (Requiere que modifiquemos RLS temporalmente)
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+        const supabase = createClient(supabaseUrl, supabaseKey);
 
         // 3. Verificamos si la orden ya fue registrada anteriormente (Prevenir F5 Duplicados)
         const { data: existingOrder } = await supabase
@@ -59,6 +67,33 @@ export async function POST(req: Request) {
         if (error) {
             console.error("Supabase Insert Error:", error);
             throw error;
+        }
+
+        // 5. Reducir el Stock en la Base de Datos ('products')
+        try {
+            // Se usa el Service Role en el backend para poder sobreescribir stocks si es necesario sin chocar con RLS
+            // Pero por simplicidad de nuestro entorno actual usaremos el array de elementos del carrito:
+            await Promise.all(cartItems.map(async (item: any) => {
+                // Selecciona el stock actual del producto
+                const { data: productData, error: fetchError } = await supabase
+                    .from('products')
+                    .select('stock')
+                    .eq('id', item.id)
+                    .single();
+
+                if (!fetchError && productData) {
+                    const newStock = Math.max(0, productData.stock - item.quantity);
+
+                    // Actualiza con el nuevo stock reducido
+                    await supabase
+                        .from('products')
+                        .update({ stock: newStock })
+                        .eq('id', item.id);
+                }
+            }));
+        } catch (stockError) {
+            console.error("Error al descontar stock (la orden sí se guardó):", stockError);
+            // No detenemos el flujo, la orden ya fue pagada y registrada en el paso 4.
         }
 
         return NextResponse.json({ success: true, order: newOrder });
