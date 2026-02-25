@@ -55,6 +55,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<UserProfile | null>(null);
     const [products, setProducts] = useState<Product[]>([]);
     const [cart, setCart] = useState<CartItem[]>([]);
+    const [isCartLoaded, setIsCartLoaded] = useState(false);
+
+    // 0. Cargar carrito guardado en el navegador de manera segura (Post-Hydration)
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem('grecia-cart');
+            if (saved) setCart(JSON.parse(saved));
+        } catch (error) {
+            console.error("Error leyendo carrito", error);
+        } finally {
+            setIsCartLoaded(true);
+        }
+    }, []);
+
+    // 0.1 Guardar carrito automáticamente cada vez que cambia (Solo tras cargar)
+    useEffect(() => {
+        if (isCartLoaded) {
+            try {
+                localStorage.setItem('grecia-cart', JSON.stringify(cart));
+            } catch (error) {
+                console.error("Error guardando carrito", error);
+            }
+        }
+    }, [cart, isCartLoaded]);
 
     // Cargar Inventario Inicial desde API Backend (Real)
     // Se recomienda envolverlo en una carga async segura
