@@ -1,67 +1,31 @@
 import { NextResponse } from 'next/server';
-import { SignJWT } from 'jose';
-import { cookies } from 'next/headers';
-
-const SECRET_KEY = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'miclavesecretamuysegura-123456789'
-);
+import { createClient } from '@/utils/supabase/server';
 
 export async function POST(request: Request) {
     try {
         const { email, password } = await request.json();
+        const supabase = await createClient();
 
-        // Validar credenciales hardcodeadas (Simulando DB de usuario)
-        if (email === 'admin@grecia.com' && password === 'admin123') {
+        // Solicitar Autenticación Real al Servidor
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
 
-            // 1. Crear Token irrompible (JWT) con 'jose'
-            const alg = 'HS256';
-            const jwt = await new SignJWT({ role: 'admin', email })
-                .setProtectedHeader({ alg })
-                .setIssuedAt()
-                .setExpirationTime('8h') // Expira en 8 horas
-                .sign(SECRET_KEY);
-
-            // 2. Guardar Token en Cookie HttpOnly (El Hacker no puede verlo por JS)
-            const cookieStore = await cookies();
-            cookieStore.set('auth_token', jwt, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                path: '/',
-                maxAge: 60 * 60 * 8, // 8 horas
-            });
-
-            return NextResponse.json({ success: true, role: 'admin' });
+        if (error || !data.user) {
+            return NextResponse.json(
+                { success: false, message: 'Credenciales inválidas o usuario inexistente.' },
+                { status: 401 }
+            );
         }
 
-        if (email === 'cliente@grecia.com' && password === '1234') {
-            // Clientes normales tambien reciben token pero de rol limitidato
-            const alg = 'HS256';
-            const jwt = await new SignJWT({ role: 'user', email })
-                .setProtectedHeader({ alg })
-                .setIssuedAt()
-                .setExpirationTime('8h')
-                .sign(SECRET_KEY);
+        // Definir Rol dinámicamente: Si el correo es el asignado al admin, darle privilegios.
+        const role = data.user.email === 'greciafashionstore2@gmail.com' ? 'admin' : 'user';
 
-            const cookieStore = await cookies();
-            cookieStore.set('auth_token', jwt, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                path: '/',
-                maxAge: 60 * 60 * 8,
-            });
-
-            return NextResponse.json({ success: true, role: 'user' });
-        }
-
-        return NextResponse.json(
-            { success: false, message: 'Credenciales inválidas' },
-            { status: 401 }
-        );
+        return NextResponse.json({ success: true, role });
     } catch {
         return NextResponse.json(
-            { success: false, message: 'Error procesando login' },
+            { success: false, message: 'Error procesando login contra Supabase.' },
             { status: 500 }
         );
     }

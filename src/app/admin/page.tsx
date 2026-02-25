@@ -1,29 +1,13 @@
-import { cookies } from "next/headers";
-import { jwtVerify } from "jose";
+import { createClient } from '@/utils/supabase/server';
 import AdminDashboard from "@/app/admin/AdminDashboard"; // Un nuevo Client Component
 
-const SECRET_KEY = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'miclavesecretamuysegura-123456789'
-);
-
 export default async function AdminPage() {
-    // 1. Doble Verifición Server-Side del Token
-    const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
+    // 1. Doble Verificación Server-Side garantizada vía Supabase
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    let userRole = null;
-
-    if (token) {
-        try {
-            const { payload } = await jwtVerify(token, SECRET_KEY);
-            userRole = payload.role;
-        } catch {
-            console.error("Token admin inválido");
-        }
-    }
-
-    // 2. Si forzaron la entrada sin ser Admin (fallback del middleware)
-    if (userRole !== "admin") {
+    // 2. Si no hay usuario o no es el admin designado
+    if (!user || user.email !== "greciafashionstore2@gmail.com") {
         return (
             <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 text-center">
                 <div className="bg-black/80 border border-red-900 rounded-lg p-10 max-w-lg w-full">

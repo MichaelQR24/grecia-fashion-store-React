@@ -1,28 +1,18 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
-import { jwtVerify } from 'jose';
-import { cookies } from 'next/headers';
-
-const SECRET_KEY = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'miclavesecretamuysegura-123456789'
-);
+import { supabase as supabaseAdmin } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/server';
 
 // Helper function to verify admin
 async function verifyAdmin() {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!token) return { error: 'Acceso denegado.' };
+    if (!user) return { error: 'Acceso denegado.' };
 
-    try {
-        const verified = await jwtVerify(token, SECRET_KEY);
-        if (verified.payload.role !== 'admin') {
-            return { error: 'Privilegios insuficientes.' };
-        }
-        return { success: true };
-    } catch {
-        return { error: 'Token inválido.' };
+    if (user.email !== 'greciafashionstore2@gmail.com') {
+        return { error: 'Privilegios insuficientes.' };
     }
+    return { success: true };
 }
 
 export async function POST(request: Request) {
@@ -45,7 +35,7 @@ export async function POST(request: Request) {
         const filePath = `public/${fileName}`;
 
         // 4. Subir a Supabase Storage (Bucket: 'products')
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabaseAdmin.storage
             .from('products')
             .upload(filePath, file, {
                 cacheControl: '3600',
@@ -58,7 +48,7 @@ export async function POST(request: Request) {
         }
 
         // 5. Obtener la URL Pública absoluta generada por Supabase
-        const { data: publicUrlData } = supabase.storage
+        const { data: publicUrlData } = supabaseAdmin.storage
             .from('products')
             .getPublicUrl(filePath);
 

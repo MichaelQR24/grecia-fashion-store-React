@@ -1,20 +1,24 @@
 @import "tailwindcss";
 
 @theme {
-  --color-grecia-accent: #FF2A7A;
-  --color-grecia-accent-dark: #D81B60;
-  --color-grecia-bg: #000000;
-  --color-grecia-card: #111111;
-  --color-grecia-card-hover: #1A1A1A;
-  --color-grecia-text: #FFFFFF;
+  /* Paleta Rose Gold / Femenina */
+  --color-grecia-accent: #DDA7A5;
+  --color-grecia-accent-dark: #B07D7B;
+  --color-grecia-bg: #030303;
+  /* Negro profundizado y cálido */
+  --color-grecia-card: #0F0E0E;
+  /* Ligeramente tintado de rojo off-black */
+  --color-grecia-card-hover: #1A1818;
+  --color-grecia-text: #Fdfbfb;
   --color-grecia-muted: #A0AEC0;
 
   --font-serif: "Playfair Display", serif;
   --font-sans: "Poppins", sans-serif;
 
-  --animate-fade-in: fadeIn 0.5s ease-out;
-  --animate-slide-up: slideUp 0.8s ease-out;
-  --animate-pulse-slow: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-fade-in: fadeIn 0.8s ease-out;
+  --animate-slide-up: slideUp 1s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-pulse-slow: pulse-slow 4s ease-in-out infinite;
+  --animate-float: float 6s ease-in-out infinite;
 }
 
 @keyframes fadeIn {
@@ -51,6 +55,54 @@
   }
 }
 
+@keyframes ken-burns {
+  0% {
+    transform: scale(1);
+  }
+
+  100% {
+    transform: scale(1.15);
+  }
+}
+
+.animate-ken-burns {
+  animation: ken-burns 30s ease-out forwards alternate infinite;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-12px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
 @layer base {
   body {
     font-family: var(--font-sans);
@@ -70,18 +122,19 @@
   }
 
   .card-hover {
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .card-hover:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 30px rgba(255, 42, 122, 0.15);
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(221, 167, 165, 0.08);
+    /* Sombra Rose Gold muy sutil */
   }
 
   .reveal {
     opacity: 0;
-    transform: translateY(30px);
-    transition: all 0.8s ease-out;
+    transform: translateY(40px);
+    transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .reveal.active {
@@ -129,6 +182,14 @@
   .popup-overlay {
     background-color: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(5px);
+  }
+
+  .glass-panel {
+    background: rgba(5, 5, 5, 0.45);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
   }
 }
 

@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server';
-import { jwtVerify } from 'jose';
-import { cookies } from 'next/headers';
-import { supabase } from '@/lib/supabase';
-
-const SECRET_KEY = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'miclavesecretamuysegura-123456789'
-);
+import { supabase as supabaseAdmin } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/server';
 
 // --- 1. LECTURA (GET) - Público ---
 export async function GET() {
     try {
-        const { data: products, error } = await supabase
+        const { data: products, error } = await supabaseAdmin
             .from('products')
             .select('*')
             .order('created_at', { ascending: false });
@@ -29,21 +24,13 @@ export async function GET() {
 // --- 2. ESCRITURA (POST) - Protegido (Solo Administradores) ---
 export async function POST(request: Request) {
     try {
-        // A. VERIFICACIÓN DE SEGURIDAD JWT (Anti-Hackers)
-        const cookieStore = await cookies();
-        const token = cookieStore.get('auth_token')?.value;
+        // A. VERIFICACIÓN DE SEGURIDAD SUPABASE SSR
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
 
-        if (!token) return NextResponse.json({ error: 'Acceso denegado. No hay sesión válida.' }, { status: 401 });
+        if (!user) return NextResponse.json({ error: 'Acceso denegado. No hay sesión válida.' }, { status: 401 });
 
-        let payload;
-        try {
-            const verified = await jwtVerify(token, SECRET_KEY);
-            payload = verified.payload;
-        } catch {
-            return NextResponse.json({ error: 'Token inválido o expirado.' }, { status: 401 });
-        }
-
-        if (payload.role !== 'admin') {
+        if (user.email !== 'greciafashionstore2@gmail.com') {
             return NextResponse.json({ error: 'Privilegios insuficientes. Sólo administradores pueden crear productos.' }, { status: 403 });
         }
 
@@ -57,7 +44,8 @@ export async function POST(request: Request) {
                 price: Number(newProductData.price),
                 category: newProductData.category,
                 stock: Number(newProductData.stock),
-                image: newProductData.image
+                image: newProductData.image,
+                colors: newProductData.colors || []
             }])
             .select()
             .single();

@@ -1,31 +1,22 @@
-import { cookies } from "next/headers";
-import { jwtVerify } from "jose";
+import { createClient } from '@/utils/supabase/server';
 import LogoutButton from "@/components/ui/LogoutButton";
 
-const SECRET_KEY = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'miclavesecretamuysegura-123456789'
-);
-
 export default async function UserDashboard() {
-    // 1. Verificación Server-Side del Token
-    const cookieStore = await cookies();
-    const token = cookieStore.get('auth_token')?.value;
+    // 1. Verificación Server-Side de Sesión con Supabase
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
     let userRole = null;
     let userEmail = "";
 
-    if (token) {
-        try {
-            const { payload } = await jwtVerify(token, SECRET_KEY);
-            userRole = payload.role as string;
-            userEmail = payload.email as string || "cliente@grecia.com";
-        } catch {
-            console.error("Token de usuario inválido");
-        }
+    if (user) {
+        userEmail = user.email || "cliente@grecia.com";
+        // Si el correo es el del administrador, le asignamos el rol
+        userRole = user.email === 'greciafashionstore2@gmail.com' ? 'admin' : 'user';
     }
 
-    // 2. Si no hay rol de user o admin, redirige (fallback de middleware)
-    if (!userRole) {
+    // 2. Si no hay usuario de Supabase, muestra acceso denegado
+    if (!user) {
         return (
             <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 text-center">
                 <div className="bg-black/80 border border-red-900 rounded-lg p-10 max-w-lg w-full">
