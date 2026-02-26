@@ -67,7 +67,8 @@ export default function Header() {
       }
 
       // Login Exitoso (Cookies ya fueron seteadas por Supabase JS)
-      const role = data.user.email === 'greciafashionstore2@gmail.com' ? 'admin' : 'user';
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'greciafashionstore2@gmail.com';
+      const role = data.user.email === adminEmail ? 'admin' : 'user';
       setUserRole(role);
 
       setLoginModalOpen(false);
@@ -263,11 +264,7 @@ export default function Header() {
                   {isLoginMode ? "Acceso seguro a clientes o administrador" : "Únete a nuestra exclusiva base de clientes"}
                 </p>
 
-                <div className="mt-4 p-3 bg-gray-900/50 rounded border border-gray-800 text-left">
-                  <p className="text-[10px] text-gray-400 mb-1 font-bold">INFO DE SEGURIDAD:</p>
-                  <p className="text-[10px] text-gray-500">🔒 Esta app ahora usa Criptografía Real de <span className="text-grecia-accent">Supabase Auth</span>.</p>
-                  <p className="text-[10px] text-gray-500 mt-1">📧 El correo &quot;admin@grecia.com&quot; posee privilegios totales. Los demás correos registrados son clientes.</p>
-                </div>
+
               </div>
 
               <form onSubmit={handleAuthSubmit} className="space-y-4">

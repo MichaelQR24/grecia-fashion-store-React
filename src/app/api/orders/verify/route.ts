@@ -120,7 +120,7 @@ export async function POST(req: Request) {
                 })) || [];
 
                 await resend.emails.send({
-                    from: 'Grecia Fashion Store <ventas@tu-dominio.com>', // CAMBIAR "tu-dominio.com" UNA VEZ CONFIGURADO RESEND
+                    from: 'Grecia Fashion Store <onboarding@resend.dev>', // Usar onboarding@resend.dev para pruebas gratuitas
                     to: [customerEmail],
                     subject: `Confirmación de Pedido - ${newOrder?.id?.split('-')[0] || 'GRC'}`,
                     react: ReceiptEmail({
