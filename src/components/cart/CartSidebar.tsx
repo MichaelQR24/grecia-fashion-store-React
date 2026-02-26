@@ -11,14 +11,20 @@ interface CartSidebarProps {
 export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
     const { cart, removeFromCart, updateCartItemQuantity, clearCart, user } = useAppContext();
     const [isStripeLoading, setIsStripeLoading] = useState(false);
+    const [termsAccepted, setTermsAccepted] = useState(false);
 
     const subtotal = cart.reduce((total, item) => total + item.price * item.quantity, 0);
 
     // ---------------------------------------------
     // 1. MANEJADOR DE PAGO STRIPE (Redirección)
     // ---------------------------------------------
+    // ---------------------------------------------
     const handleStripeCheckout = async () => {
         if (cart.length === 0) return;
+        if (!termsAccepted) {
+            alert("Debes aceptar los Términos y Condiciones (Corporate Compliance) antes de proceder al pago.");
+            return;
+        }
         setIsStripeLoading(true);
 
         try {
@@ -57,6 +63,10 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
     // ---------------------------------------------
     const handleWhatsAppCheckout = () => {
         if (cart.length === 0) return;
+        if (!termsAccepted) {
+            alert("Debes aceptar los Términos y Condiciones (Corporate Compliance) antes de proceder.");
+            return;
+        }
         const phone = "1234567890"; // Reemplazar
         let message = "Hola Grecia Fashion Store! 👋%0AQuiero realizar el siguiente pedido manual:%0A%0A";
         cart.forEach((item, index) => {
@@ -210,7 +220,24 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                                     <div className="flex-1 h-px bg-gray-700"></div>
                                 </div>
 
-                                {/* Compra Manual Whatsapp (Backup) */}
+                                <div className="bg-[#151515] p-6 mb-6">
+                                    <label className="flex items-start gap-3 cursor-pointer group">
+                                        <div className="relative flex items-center justify-center mt-0.5">
+                                            <input
+                                                type="checkbox"
+                                                className="appearance-none w-5 h-5 border-2 border-gray-600 rounded bg-black checked:bg-grecia-accent checked:border-grecia-accent transition-colors cursor-pointer"
+                                                checked={termsAccepted}
+                                                onChange={(e) => setTermsAccepted(e.target.checked)}
+                                            />
+                                            {termsAccepted && <i className="fas fa-check absolute text-[10px] text-white pointer-events-none"></i>}
+                                        </div>
+                                        <span className="text-xs text-gray-400 group-hover:text-gray-300 transition">
+                                            He leído y autorizo el acuerdo legal de <a href="/terms" target="_blank" className="text-grecia-accent hover:underline">Políticas de Privacidad, Contracargos y Devoluciones</a> (Corporate Compliance).
+                                        </span>
+                                    </label>
+                                </div>
+
+                                {/* PAGO CON TARJETA DE CRÉDITO (STRIPE) */}
                                 <button
                                     onClick={handleWhatsAppCheckout}
                                     className="w-full bg-transparent border border-gray-700 text-gray-300 py-2.5 hover:bg-[#25D366] hover:text-white hover:border-[#25D366] transition flex items-center justify-center gap-2 rounded text-[11px] uppercase tracking-widest"

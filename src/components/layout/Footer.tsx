@@ -21,6 +21,14 @@ export default function Footer() {
                         </ul>
                     </div>
                     <div>
+                        <h3 className="text-sm font-bold uppercase tracking-widest mb-6 text-gray-200">Legal</h3>
+                        <ul className="space-y-3 text-gray-400 text-sm">
+                            <li><a href="/terms" className="hover:text-grecia-accent transition block">Corporate Compliance (Terms)</a></li>
+                            <li><a href="/terms" className="hover:text-grecia-accent transition block">Exchange & Return Policy</a></li>
+                            <li><a href="/terms" className="hover:text-grecia-accent transition block">Privacy Policy</a></li>
+                        </ul>
+                    </div>
+                    <div>
                         <h3 className="text-sm font-bold uppercase tracking-widest mb-6 text-gray-200">Síguenos</h3>
                         <div className="flex gap-4">
                             <a href="https://www.instagram.com/greciafashionstore/" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-gray-900 flex items-center justify-center text-white hover:bg-grecia-accent hover:text-white transition group border border-gray-800 hover:border-transparent">
