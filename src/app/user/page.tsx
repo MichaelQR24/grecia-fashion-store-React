@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server';
 import LogoutButton from "@/components/ui/LogoutButton";
 import ProfileForm from "./ProfileForm";
+import Link from 'next/link';
 
 export default async function UserDashboard() {
     // 1. Verificación Server-Side de Sesión con Supabase
@@ -17,7 +18,7 @@ export default async function UserDashboard() {
     }
 
     // 1.5 Obtener Historial de Pedidos del Usuario
-    let orders: any[] = [];
+    let orders: { id: string, total_amount: number, created_at: string, cart_items: { image: string, name: string }[] }[] = [];
     if (user) {
         const { data, error } = await supabase
             .from('orders')
@@ -56,9 +57,9 @@ export default async function UserDashboard() {
                         <p className="text-sm text-gray-500">Bienvenida a tu espacio personal, {userEmail}</p>
                     </div>
 
-                    <a href="/" className="px-5 py-2.5 bg-gray-900 border border-gray-800 text-white hover:bg-white hover:text-black transition rounded hover:shadow-[0_0_15px_rgba(255,255,255,0.3)] text-xs uppercase tracking-wider font-bold shadow-lg flex items-center gap-2">
+                    <Link href="/" className="px-5 py-2.5 bg-gray-900 border border-gray-800 text-white hover:bg-white hover:text-black transition rounded hover:shadow-[0_0_15px_rgba(255,255,255,0.3)] text-xs uppercase tracking-wider font-bold shadow-lg flex items-center gap-2">
                         <i className="fas fa-arrow-left"></i> Volver a Tienda
-                    </a>
+                    </Link>
                 </header>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -110,12 +111,15 @@ export default async function UserDashboard() {
 
                                             <div className="flex -space-x-3">
                                                 {/* Mostrar miniaturas de los items comprados */}
-                                                {(order.cart_items as any[]).slice(0, 4).map((item: any, idx: number) => (
-                                                    <img key={idx} src={item.image} alt={item.name} className="w-10 h-10 rounded-full border border-gray-600 object-cover relative" style={{ zIndex: 10 - idx }} title={item.name} />
+                                                {(order.cart_items).slice(0, 4).map((item, idx: number) => (
+                                                    <div key={idx} className="relative w-10 h-10 rounded-full border border-gray-600 object-cover" style={{ zIndex: 10 - idx }} title={item.name}>
+                                                        { /* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-full" />
+                                                    </div>
                                                 ))}
-                                                {(order.cart_items as any[]).length > 4 && (
+                                                {(order.cart_items).length > 4 && (
                                                     <div className="w-10 h-10 rounded-full border border-gray-800 bg-gray-900 flex items-center justify-center text-xs text-gray-400 relative" style={{ zIndex: 1 }}>
-                                                        +{(order.cart_items as any[]).length - 4}
+                                                        +{(order.cart_items).length - 4}
                                                     </div>
                                                 )}
                                             </div>

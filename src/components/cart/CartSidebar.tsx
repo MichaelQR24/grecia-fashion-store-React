@@ -2,7 +2,6 @@
 
 import { useAppContext } from "@/context/AppContext";
 import { useState } from "react";
-import { PayPalScriptProvider, PayPalButtons } from "@paypal/react-paypal-js";
 
 interface CartSidebarProps {
     isOpen: boolean;
@@ -54,48 +53,8 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
     };
 
     // ---------------------------------------------
-    // 2. MANEJADORES DE PAGO PAYPAL (Modal Popup)
+    // 2. MANEJADORES DE PAGO WHATSAPP
     // ---------------------------------------------
-    const createPayPalOrder = async () => {
-        try {
-            // Llamar a nuestro Backend para estampar la orden segura
-            const response = await fetch("/api/paypal/create-order", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ items: cart }),
-            });
-
-            const order = await response.json();
-            if (order.id) {
-                return order.id;
-            } else {
-                const errorDetail = order?.details?.[0];
-                const errorMessage = errorDetail ? `${errorDetail.issue} ${errorDetail.description} (${order.debug_id})` : JSON.stringify(order);
-                throw new Error(errorMessage);
-            }
-        } catch (error) {
-            console.error(error);
-            alert("No se pudo iniciar PayPal");
-        }
-    };
-
-    const onPayPalApprove = async (data: any, actions: any) => {
-        // En un Ecommerce real, aquí harías una llamada (fetch) a otra ruta tuya como `/api/paypal/capture-order`
-        // para decirle a PayPal "Sí, ya vi que el cliente aceptó el cobro, quítale el dinero".
-        // Por simplicidad en este prototipo, usamos las 'actions' directas:
-        try {
-            const capturedOrder = await actions.order.capture();
-            if (capturedOrder.status === 'COMPLETED') {
-                // Éxito Total
-                clearCart();
-                window.location.href = `/checkout/success?session_id=${capturedOrder.id}&gateway=paypal`;
-            }
-        } catch (error) {
-            console.error("Fallo al cobrar la orden", error);
-            alert("Fallo al cobrar la orden de PayPal.");
-        }
-    };
-
     const handleWhatsAppCheckout = () => {
         if (cart.length === 0) return;
         const phone = "1234567890"; // Reemplazar

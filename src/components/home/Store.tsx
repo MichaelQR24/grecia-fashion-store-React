@@ -8,6 +8,7 @@ export default function Store() {
     const [activeCategory, setActiveCategory] = useState<string>("Ver Todo");
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     const handleAddToCart = (product: any) => {
         addToCart(product);
         // Opcional: Feedback visual rápido
@@ -56,7 +57,7 @@ export default function Store() {
 
                         return (
                             <div key={product.id} className="group relative transition duration-[1.5s] animate-fade-in-up flex flex-col">
-                                <div className="relative overflow-hidden mb-5 bg-[#0a0a0a] aspect-[3/4] rounded-[2rem] shadow-xl hover:shadow-[0_20px_40px_rgba(221,167,165,0.08)] transition-all duration-700">
+                                <div className="relative overflow-hidden mb-5 bg-[#0a0a0a] aspect-[3/4] rounded-[2rem] shadow-xl hover:shadow-[0_20px_40px_rgba(221,167,165,0.08)] transition-all duration-700 cursor-pointer" onClick={() => setSelectedImage(product.image)}>
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={product.image} alt={product.name} className={`w-full h-full object-cover transition duration-[1.5s] ease-[cubic-bezier(0.16,1,0.3,1)] ${isOutOfStock ? 'grayscale opacity-30' : 'group-hover:scale-105 opacity-90 group-hover:opacity-100'}`} />
 
@@ -96,16 +97,12 @@ export default function Store() {
                                     )}
 
                                     {!isOutOfStock && (
-                                        <div className="absolute inset-x-0 bottom-0 p-5 opacity-0 group-hover:opacity-100 transform translate-y-6 group-hover:translate-y-0 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] z-20 flex flex-col gap-2">
+                                        <div className="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-all duration-500 z-20 flex justify-end pointer-events-none">
                                             <button
-                                                onClick={() => setSelectedImage(product.image)}
-                                                className="bg-[#111]/90 backdrop-blur-md text-white w-full py-2.5 font-bold text-[9px] uppercase tracking-[0.15em] hover:bg-white hover:text-black border border-white/20 transition-all duration-500 rounded-full flex items-center justify-center gap-2">
-                                                <i className="fas fa-search-plus"></i> Ver Tamaño Real
-                                            </button>
-                                            <button
-                                                onClick={() => handleAddToCart(product)}
-                                                className="bg-white/95 backdrop-blur-md text-black w-full py-3.5 font-bold text-[10px] uppercase tracking-[0.15em] hover:bg-grecia-accent hover:text-white border border-transparent transition-all duration-500 shadow-[0_15px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_15px_30px_rgba(221,167,165,0.4)] rounded-full">
-                                                Agregar a la Bolsa
+                                                onClick={(e) => { e.stopPropagation(); setSelectedImage(product.image); }}
+                                                className="bg-black/60 hover:bg-black backdrop-blur-md text-white w-10 h-10 rounded-full flex items-center justify-center transition border border-white/10 pointer-events-auto shadow-lg"
+                                                title="Ver tamaño real">
+                                                <i className="fas fa-expand-alt"></i>
                                             </button>
                                         </div>
                                     )}
@@ -149,12 +146,26 @@ export default function Store() {
                                         )}
 
                                         {/* GUÍA DE TALLAS COLOMBIANA (Idea 5) */}
-                                        <div className="flex flex-col items-center gap-1 mt-1">
+                                        <div className="flex flex-col items-center gap-1 mt-1 mb-5">
                                             <span className="text-[9px] text-gray-500 uppercase tracking-[0.2em]">{product.category}</span>
                                             <span className="text-[10px] text-grecia-accent hover:text-white cursor-pointer transition mt-0.5 border-b border-dashed border-grecia-accent/30 hover:border-white">
                                                 <i className="fas fa-ruler-combined mr-1"></i> Guía de Tallas (Horma Pequeña)
                                             </span>
                                         </div>
+
+                                        {!isOutOfStock ? (
+                                            <button
+                                                onClick={() => handleAddToCart(product)}
+                                                className="w-full bg-white text-black py-3 font-bold text-[10px] uppercase tracking-[0.15em] hover:bg-grecia-accent hover:text-white transition-all duration-300 rounded-lg shadow-lg">
+                                                <i className="fas fa-shopping-bag mr-2"></i> Agregar a la Bolsa
+                                            </button>
+                                        ) : (
+                                            <button
+                                                disabled
+                                                className="w-full bg-gray-900/50 text-gray-500 py-3 font-bold text-[10px] uppercase tracking-[0.15em] rounded-lg cursor-not-allowed border border-gray-800">
+                                                Agotado
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>

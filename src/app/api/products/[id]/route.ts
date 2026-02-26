@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { supabase as supabaseAdmin } from '@/lib/supabase';
 import { createClient } from '@/utils/supabase/server';
 
 // Middleware interno para verificar sesion

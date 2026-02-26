@@ -336,7 +336,7 @@ export default function AdminDashboard() {
                                                     <div className={`w-4 h-4 rounded-full bg-white absolute top-0.5 transition-transform ${isNew ? 'translate-x-5' : 'translate-x-1'}`}></div>
                                                 </div>
                                                 <input type="checkbox" className="hidden" checked={isNew} onChange={() => setIsNew(!isNew)} />
-                                                <span className="text-xs text-gray-300 group-hover:text-white transition">🌟 Marcar como <strong>"Novedad"</strong> (Recién Llegado)</span>
+                                                <span className="text-xs text-gray-300 group-hover:text-white transition">🌟 Marcar como <strong>&quot;Novedad&quot;</strong> (Recién Llegado)</span>
                                             </label>
 
                                             <label className="flex items-center gap-3 cursor-pointer group">
@@ -344,7 +344,7 @@ export default function AdminDashboard() {
                                                     <div className={`w-4 h-4 rounded-full bg-white absolute top-0.5 transition-transform ${isBestseller ? 'translate-x-5' : 'translate-x-1'}`}></div>
                                                 </div>
                                                 <input type="checkbox" className="hidden" checked={isBestseller} onChange={() => setIsBestseller(!isBestseller)} />
-                                                <span className="text-xs text-gray-300 group-hover:text-white transition">🔥 Marcar como <strong>"Best Seller"</strong> (Más Vendido)</span>
+                                                <span className="text-xs text-gray-300 group-hover:text-white transition">🔥 Marcar como <strong>&quot;Best Seller&quot;</strong> (Más Vendido)</span>
                                             </label>
 
                                             <label className="flex items-center gap-3 cursor-pointer group">
@@ -352,7 +352,7 @@ export default function AdminDashboard() {
                                                     <div className={`w-4 h-4 rounded-full bg-white absolute top-0.5 transition-transform ${isOffer ? 'translate-x-5' : 'translate-x-1'}`}></div>
                                                 </div>
                                                 <input type="checkbox" className="hidden" checked={isOffer} onChange={() => setIsOffer(!isOffer)} />
-                                                <span className="text-xs text-gray-300 group-hover:text-white transition">🏷️ Marcar en <strong>"Oferta Especial"</strong></span>
+                                                <span className="text-xs text-gray-300 group-hover:text-white transition">🏷️ Marcar en <strong>&quot;Oferta Especial&quot;</strong></span>
                                             </label>
                                         </div>
                                     </div>
@@ -638,7 +638,7 @@ function AnalyticsDashboard({ products }: { products: Product[] }) {
                                 <div className="flex justify-between items-center mb-2">
                                     <div className="flex items-center gap-4">
                                         <span className={`font-serif text-lg ${index === 0 ? 'text-[#FFC107]' : index === 1 ? 'text-gray-300' : index === 2 ? 'text-[#cd7f32]' : 'text-gray-600'}`}>#{index + 1}</span>
-                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        { /* eslint-disable-next-line @next/next/no-img-element */}
                                         <div className="w-8 h-8 rounded-full bg-gray-800 overflow-hidden border border-gray-700">
                                             <img src={prod.image} alt={prod.name} className="w-full h-full object-cover" />
                                         </div>
@@ -670,6 +670,7 @@ import { useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 
 function CustomersDashboard() {
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     const [customers, setCustomers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -764,6 +765,7 @@ function CustomersDashboard() {
 // SUB-COMPONENTE: GESTIÓN DE PEDIDOS Y ESTADOS
 // ----------------------------------------------------------------------
 function OrdersDashboard() {
+    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
     const [orders, setOrders] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'en_progreso' | 'vendido' | 'cancelado'>('all');
@@ -878,6 +880,7 @@ function OrdersDashboard() {
                                 <div className="bg-[#0a0a0a] border border-gray-800 rounded p-3 text-xs text-gray-400">
                                     <strong className="text-white uppercase text-[9px] tracking-widest block mb-2">Artículos del Pedido ({order.items?.length || 0}):</strong>
                                     <ul className="list-disc list-inside space-y-1">
+                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                         {order.items?.map((item: any, idx: number) => (
                                             <li key={idx}><strong>{item.quantity}x</strong> {item.name}</li>
                                         ))}

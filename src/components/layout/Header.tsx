@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
 import CartSidebar from "@/components/cart/CartSidebar";
 import { createClient } from "@/utils/supabase/client";
 
 export default function Header() {
-  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -43,7 +41,7 @@ export default function Header() {
 
       if (!isLoginMode) {
         // Registro
-        const { data, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
         });
@@ -254,7 +252,7 @@ export default function Header() {
                 <div className="mt-4 p-3 bg-gray-900/50 rounded border border-gray-800 text-left">
                   <p className="text-[10px] text-gray-400 mb-1 font-bold">INFO DE SEGURIDAD:</p>
                   <p className="text-[10px] text-gray-500">🔒 Esta app ahora usa Criptografía Real de <span className="text-grecia-accent">Supabase Auth</span>.</p>
-                  <p className="text-[10px] text-gray-500 mt-1">📧 El correo "admin@grecia.com" posee privilegios totales. Los demás correos registrados son clientes.</p>
+                  <p className="text-[10px] text-gray-500 mt-1">📧 El correo &quot;admin@grecia.com&quot; posee privilegios totales. Los demás correos registrados son clientes.</p>
                 </div>
               </div>
 

@@ -36,7 +36,7 @@ export async function POST(req: Request) {
         const { items } = await req.json();
 
         // 1. Calculamos el total estricto desde el Backend. (Nunca confiar en el valor del Front-End)
-        const total = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0).toFixed(2);
+        const total = items.reduce((sum: number, item: { price: number; quantity: number }) => sum + (item.price * item.quantity), 0).toFixed(2);
 
         // 2. Autenticación máquina-a-máquina con PayPal
         const accessToken = await getPayPalAccessToken();
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
                             }
                         }
                     },
-                    items: items.map((item: any) => ({
+                    items: items.map((item: { name: string; price: number; quantity: number }) => ({
                         name: item.name,
                         unit_amount: {
                             currency_code: "USD",
@@ -94,8 +94,8 @@ export async function POST(req: Request) {
         const data = await res.json();
         return NextResponse.json({ orderID: data.id, links: data.links }, { status: 200 });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('PayPal Integration API Error:', err);
-        return NextResponse.json({ error: err.message }, { status: 500 });
+        return NextResponse.json({ error: (err as Error).message }, { status: 500 });
     }
 }

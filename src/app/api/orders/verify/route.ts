@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { createClient } from '@/utils/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
     apiVersion: '2026-02-25.clover',
@@ -29,12 +29,11 @@ export async function POST(req: Request) {
 
         // 2. Conectar a Supabase como Administrador Server-Side (Service Role)
         // Ya que los Webhooks de Stripe suceden "en el fondo", Next.js no tiene las Cookies del navegador del usuario.
-        // Usamos `@supabase/supabase-js` directo en lugar del ayudante de SSR para forzar el registro y salto de RLS
-        const { createClient } = require('@supabase/supabase-js');
-        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        // Usamos `@supabase/supabase-js` directo importado arriba en lugar del ayudante de SSR para forzar el registro y salto de RLS
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
         // Para entornos Server-Side seguros idealmente usamos SUPABASE_SERVICE_ROLE_KEY.
         // Al no tenerla configurada, usamos la ANON_KEY localmente (Requiere que modifiquemos RLS temporalmente)
-        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        const supabaseKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) as string;
 
         const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -73,7 +72,7 @@ export async function POST(req: Request) {
         try {
             // Se usa el Service Role en el backend para poder sobreescribir stocks si es necesario sin chocar con RLS
             // Pero por simplicidad de nuestro entorno actual usaremos el array de elementos del carrito:
-            await Promise.all(cartItems.map(async (item: any) => {
+            await Promise.all(cartItems.map(async (item: { id: string; quantity: number }) => {
                 // Selecciona el stock actual del producto
                 const { data: productData, error: fetchError } = await supabase
                     .from('products')
@@ -98,8 +97,8 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ success: true, order: newOrder });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('Order verification error:', err);
-        return NextResponse.json({ error: err.message || 'Error verificando la orden internamente' }, { status: 500 });
+        return NextResponse.json({ error: (err as Error).message || 'Error verificando la orden internamente' }, { status: 500 });
     }
 }

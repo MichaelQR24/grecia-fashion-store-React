@@ -58,8 +58,8 @@ export async function POST(request: Request) {
             imageUrl: publicUrlData.publicUrl
         });
 
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('Error interno del motor de subida:', e);
-        return NextResponse.json({ success: false, message: `Excepción Nube: ${e.message || 'Desconocido'}` }, { status: 500 });
+        return NextResponse.json({ success: false, message: `Excepción Nube: ${(e as Error).message || 'Desconocido'}` }, { status: 500 });
     }
 }

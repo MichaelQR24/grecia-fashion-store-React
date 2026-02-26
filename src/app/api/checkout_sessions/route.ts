@@ -14,7 +14,7 @@ export async function POST(req: Request) {
         }
 
         // Transformar items del carrito de Grecia Fashion al formato que espera Stripe (LineItems)
-        const lineItems = items.map((item: any) => ({
+        const lineItems = items.map((item: { name: string; image: string; category: string; price: number; quantity: number }) => ({
             price_data: {
                 currency: 'usd',
                 product_data: {
@@ -45,8 +45,8 @@ export async function POST(req: Request) {
 
         return NextResponse.json({ sessionId: session.id, url: session.url });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error('Stripe Integration Error:', err);
-        return NextResponse.json({ error: err.message || 'Error procesando checkout' }, { status: 500 });
+        return NextResponse.json({ error: (err as Error).message || 'Error procesando checkout' }, { status: 500 });
     }
 }

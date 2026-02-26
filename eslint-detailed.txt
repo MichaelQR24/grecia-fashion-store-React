@@ -1,0 +1,68 @@
+
+Archivo: C:\Users\Micha\OneDrive\Escritorio\Grecia Fashion Store\src\app\admin\AdminDashboard.tsx
+  - Linea 339: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. (react/no-unescaped-entities)
+  - Linea 339: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. (react/no-unescaped-entities)
+  - Linea 347: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. (react/no-unescaped-entities)
+  - Linea 347: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. (react/no-unescaped-entities)
+  - Linea 355: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. (react/no-unescaped-entities)
+  - Linea 355: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. (react/no-unescaped-entities)
+  - Linea 643: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element (@next/next/no-img-element)
+  - Linea 673: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  - Linea 767: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  - Linea 881: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+Archivo: C:\Users\Micha\OneDrive\Escritorio\Grecia Fashion Store\src\app\api\checkout_sessions\route.ts
+  - Linea 17: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  - Linea 48: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+Archivo: C:\Users\Micha\OneDrive\Escritorio\Grecia Fashion Store\src\app\api\orders\verify\route.ts
+  - Linea 3: 'createClient' is defined but never used. (@typescript-eslint/no-unused-vars)
+  - Linea 33: A `require()` style import is forbidden. (@typescript-eslint/no-require-imports)
+  - Linea 76: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  - Linea 101: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+Archivo: C:\Users\Micha\OneDrive\Escritorio\Grecia Fashion Store\src\app\api\paypal\create-order\route.ts
+  - Linea 39: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  - Linea 59: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  - Linea 97: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+Archivo: C:\Users\Micha\OneDrive\Escritorio\Grecia Fashion Store\src\app\api\products\[id]\route.ts
+  - Linea 2: 'supabaseAdmin' is defined but never used. (@typescript-eslint/no-unused-vars)
+
+Archivo: C:\Users\Micha\OneDrive\Escritorio\Grecia Fashion Store\src\app\api\upload\route.ts
+  - Linea 61: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+Archivo: C:\Users\Micha\OneDrive\Escritorio\Grecia Fashion Store\src\app\user\ProfileForm.tsx
+  - Linea 6: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+Archivo: C:\Users\Micha\OneDrive\Escritorio\Grecia Fashion Store\src\app\user\page.tsx
+  - Linea 20: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  - Linea 59: Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages (@next/next/no-html-link-for-pages)
+  - Linea 113: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  - Linea 113: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  - Linea 114: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element (@next/next/no-img-element)
+  - Linea 116: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  - Linea 118: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+Archivo: C:\Users\Micha\OneDrive\Escritorio\Grecia Fashion Store\src\components\cart\CartSidebar.tsx
+  - Linea 5: 'PayPalScriptProvider' is defined but never used. (@typescript-eslint/no-unused-vars)
+  - Linea 5: 'PayPalButtons' is defined but never used. (@typescript-eslint/no-unused-vars)
+  - Linea 59: 'createPayPalOrder' is assigned a value but never used. (@typescript-eslint/no-unused-vars)
+  - Linea 82: 'onPayPalApprove' is assigned a value but never used. (@typescript-eslint/no-unused-vars)
+  - Linea 82: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+  - Linea 82: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+Archivo: C:\Users\Micha\OneDrive\Escritorio\Grecia Fashion Store\src\components\home\Store.tsx
+  - Linea 11: Unexpected any. Specify a different type. (@typescript-eslint/no-explicit-any)
+
+Archivo: C:\Users\Micha\OneDrive\Escritorio\Grecia Fashion Store\src\components\layout\Header.tsx
+  - Linea 11: 'router' is assigned a value but never used. (@typescript-eslint/no-unused-vars)
+  - Linea 46: 'data' is assigned a value but never used. (@typescript-eslint/no-unused-vars)
+  - Linea 257: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. (react/no-unescaped-entities)
+  - Linea 257: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`. (react/no-unescaped-entities)
+
+Archivo: C:\Users\Micha\OneDrive\Escritorio\Grecia Fashion Store\src\components\ui\LogoutButton.tsx
+  - Linea 3: 'useRouter' is defined but never used. (@typescript-eslint/no-unused-vars)
+
+Archivo: C:\Users\Micha\OneDrive\Escritorio\Grecia Fashion Store\src\utils\supabase\middleware.ts
+  - Linea 18: 'options' is defined but never used. (@typescript-eslint/no-unused-vars)

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 
+/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 export default function ProfileForm({ initialData }: { initialData: any }) {
     const [name, setName] = useState(initialData?.name || "");
     const [phone, setPhone] = useState(initialData?.phone || "");

@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useAppContext } from "@/context/AppContext";
 
 import { createClient } from "@/utils/supabase/client";
