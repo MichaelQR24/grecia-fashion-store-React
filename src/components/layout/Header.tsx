@@ -132,65 +132,79 @@ export default function Header() {
         </div>
 
         {/* Main Header Container */}
-        <div className={`container mx-auto px-6 transition-all duration-500 flex items-center justify-between ${isScrolled ? "py-3" : "py-5"}`}>
-          <button className="md:hidden text-white text-xl" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            <i className="fas fa-bars"></i>
-          </button>
+        <div className={`container mx-auto px-4 md:px-6 transition-all duration-500 flex items-center justify-between ${isScrolled ? "py-3" : "py-5"}`}>
 
-          <Link href="/" className="flex flex-col items-center group">
-            <span className="text-2xl md:text-3xl font-serif font-bold transition-colors flex items-center gap-2">
-              <span className="text-grecia-accent italic">Grecia</span>
-              <span className="text-white">Fashion Store</span>
-            </span>
-            <span className="text-[9px] md:text-[10px] tracking-[0.4em] uppercase text-gray-400 mt-1">Boutique</span>
-          </Link>
+          {/* MOBILE LEFT: Hamburger Menu */}
+          <div className="flex-1 md:hidden flex justify-start">
+            <button className="text-white text-2xl" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              <i className="fas fa-bars"></i>
+            </button>
+          </div>
 
-          <nav className="hidden md:flex space-x-8 items-center">
+          {/* DESKTOP LEFT: Navigation Tabs */}
+          <nav className="hidden md:flex flex-1 space-x-8 items-center justify-start">
             <Link href="#categories" className="text-xs font-semibold text-gray-300 hover:text-grecia-accent tracking-widest uppercase transition">Líneas</Link>
             <Link href="#store" className="text-xs font-semibold text-grecia-accent hover:text-white tracking-widest uppercase transition">Catálogo</Link>
             <Link href="#testimonials" className="text-xs font-semibold text-gray-300 hover:text-grecia-accent tracking-widest uppercase transition">Reseñas</Link>
             <Link href="#visit-us" className="text-xs font-semibold text-gray-300 hover:text-grecia-accent tracking-widest uppercase transition">Visítanos</Link>
           </nav>
 
-          <div className="flex items-center space-x-5">
+          {/* CENTER: Dynamic Logo Responsive */}
+          <Link href="/" className="flex flex-col items-center group shrink-0">
+            <span className="text-2xl md:text-3xl font-serif font-bold transition-colors flex items-center md:gap-2">
+              <span className="text-grecia-accent italic">Grecia</span>
+              <span className="text-white hidden sm:inline">Fashion Store</span>
+              <span className="text-white sm:hidden ml-1">Fashion</span>
+            </span>
+            <span className="text-[8px] md:text-[10px] tracking-[0.4em] uppercase text-gray-400 mt-1 hidden sm:block">Boutique</span>
+          </Link>
+
+          {/* RIGHT: User Actions & Cart */}
+          <div className="flex flex-1 justify-end items-center space-x-4 md:space-x-5">
             {userRole ? (
               <div className="flex items-center gap-4">
+                {/* Desktop Welcome */}
                 {userRole === "admin" ? (
-                  <span className="text-white text-xs hidden md:inline-block border border-gray-800 px-3 py-1 rounded">
+                  <span className="text-white text-xs hidden lg:inline-block border border-gray-800 px-3 py-1 rounded">
                     Hola, <span className="text-grecia-accent font-bold">Admin</span>
                   </span>
                 ) : (
-                  <Link href="/user" className="text-white text-xs hidden md:inline-block border border-gray-800 px-3 py-1 rounded hover:border-grecia-accent transition" title="Mi Dashboard">
+                  <Link href="/user" className="text-white text-xs hidden lg:inline-block border border-gray-800 px-3 py-1 rounded hover:border-grecia-accent transition" title="Mi Dashboard">
                     Hola, <span className="font-bold capitalize">{user?.full_name || user?.email?.split('@')[0] || "Cliente"}</span> <i className="fas fa-chevron-right text-[10px] ml-1"></i>
                   </Link>
                 )}
 
+                {/* Account Links Dashboard - Hidden on Mobile */}
                 {userRole === "admin" && (
-                  <Link href="/admin" className="text-grecia-accent hover:text-white transition text-sm flex items-center gap-1 bg-black/50 border border-gray-800 px-3 py-1 rounded-full cursor-pointer" title="Panel de Administrador">
+                  <Link href="/admin" className="text-grecia-accent hover:text-white transition hidden md:flex text-sm items-center gap-1 bg-black/50 border border-gray-800 px-3 py-1 rounded-full cursor-pointer" title="Panel de Administrador">
                     <i className="fas fa-shield-alt text-xs"></i> Portal Admin
                   </Link>
                 )}
 
                 {userRole === "user" && (
-                  <Link href="/user" className="text-gray-300 hover:text-white transition text-sm flex items-center gap-1 bg-black/50 border border-gray-800 px-3 py-1 rounded-full cursor-pointer" title="Mi Panel">
+                  <Link href="/user" className="text-gray-300 hover:text-white transition hidden md:flex text-sm items-center gap-1 bg-black/50 border border-gray-800 px-3 py-1 rounded-full cursor-pointer" title="Mi Panel">
                     <i className="fas fa-user-circle text-xs"></i> Mi Perfil
                   </Link>
                 )}
 
-                <button onClick={handleLogout} className="text-gray-500 hover:text-red-500 transition text-sm flex items-center gap-1" title="Cerrar Sesión">
+                <button onClick={handleLogout} className="text-gray-500 hover:text-red-500 transition text-sm hidden md:flex flex items-center gap-1" title="Cerrar Sesión">
                   <i className="fas fa-sign-out-alt"></i>Salir
                 </button>
               </div>
             ) : (
               <button onClick={() => setLoginModalOpen(true)} className="text-white hover:text-grecia-accent transition" title="Iniciar Sesión">
-                <i className="fas fa-user text-xl" id="user-icon"></i>
+                <i className="fas fa-user text-[1.35rem]" id="user-icon"></i>
               </button>
             )}
 
-            <button className="text-white hover:text-grecia-accent transition relative group" onClick={() => setCartOpen(true)}>
-              <i className="fas fa-shopping-bag text-xl"></i>
+            {/* CART BUTTON: Ultra-visible on mobile */}
+            <button
+              className="text-white hover:text-grecia-accent transition relative flex items-center justify-center p-2 rounded-full cursor-pointer"
+              onClick={() => setCartOpen(true)}
+            >
+              <i className="fas fa-shopping-bag text-2xl"></i>
               {cartCount > 0 && (
-                <span id="cart-count" className="absolute -top-1 -right-2 bg-grecia-accent text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center transform group-hover:scale-110 transition">
+                <span id="cart-count" className="absolute -top-1 -right-1 bg-grecia-accent text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(221,167,165,0.6)] border border-black animate-pulse-slow">
                   {cartCount > 99 ? '99+' : cartCount}
                 </span>
               )}
@@ -299,7 +313,7 @@ export default function Header() {
                     className="mt-1 flex-shrink-0 w-4 h-4 accent-grecia-accent bg-black border-gray-700 rounded cursor-pointer"
                   />
                   <label htmlFor="terms" className="text-[10px] text-gray-400 leading-tight cursor-pointer">
-                    Acepto los <span className="text-grecia-accent hover:underline">Términos y Condiciones</span>. Entiendo y estoy de acuerdo en que todas las compras realizadas en esta plataforma son estrictamente para <strong>recojo físico y presencial en la Boutique</strong> (Sin servicio de entrega a docimilio de terceros).
+                    Acepto los <a href="/terms" target="_blank" className="text-grecia-accent hover:underline">Términos y Condiciones</a>. Entiendo y estoy de acuerdo en que todas las compras realizadas en esta plataforma son estrictamente para <strong>recojo físico y presencial en la Boutique</strong> (Sin servicio de entrega a docimilio de terceros).
                   </label>
                 </div>
 
