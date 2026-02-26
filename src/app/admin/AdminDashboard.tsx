@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useAppContext, Product } from "@/context/AppContext";
 import LogoutButton from "@/components/ui/LogoutButton";
 import Image from "next/image";
+import {
+    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
+    PieChart, Pie, Cell, Legend
+} from 'recharts';
 
 export default function AdminDashboard() {
     const { products, addProduct, updateProduct, deleteProduct } = useAppContext();
@@ -501,164 +505,159 @@ export default function AdminDashboard() {
 // SUB-COMPONENTE: DASHBOARD ANALÍTICO LIGERO E INTUITIVO PARA EL CLIENTE
 // ----------------------------------------------------------------------
 function AnalyticsDashboard({ products }: { products: Product[] }) {
-    const months = [
-        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-    ];
-    const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth());
+    const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
 
-    // Generador de datos pseudoaleatorios consistentes por mes
-    const getMonthData = (monthIndex: number) => {
-        // Usamos el índice del mes (0-11) como semilla para variaciones realistas
-        const baseRevenue = 12000;
-        const baseOrders = 180;
-        const baseTicket = 65;
-
-        // Efecto de temporalidad (Venden más a fin de año, etc)
-        const multiplier = 1 + (monthIndex * 0.05) + (monthIndex === 11 ? 0.3 : 0); // Pico en Diciembre
-
-        // Crecimiento es la diferencia con el mes anterior
-        const prevMultiplier = monthIndex > 0 ? 1 + ((monthIndex - 1) * 0.05) + (monthIndex - 1 === 11 ? 0.3 : 0) : 1;
-        const growthValue = ((multiplier - prevMultiplier) / prevMultiplier) * 100;
-        const isPositiveGrowth = growthValue >= 0;
-
+    // Datos simulados inteligentes para el gráfico de línea (Tendencia)
+    const trendData = months.map((m, i) => {
+        const baseRev = 8000 + (i * 800);
+        const seasonality = (i === 4 || i === 11) ? 3000 : 0; // Picos en Mayo (Madres) y Diciembre
         return {
-            revenue: baseRevenue * multiplier,
-            orders: Math.floor(baseOrders * multiplier),
-            ticket: baseTicket + (monthIndex % 3 === 0 ? 2.5 : -1.2), // Pequeña fluctuación de ticket
-            growth: `${isPositiveGrowth ? '+' : ''}${growthValue.toFixed(1)}%`,
-            isPositiveGrowth
+            name: m,
+            ingresos: baseRev + seasonality + (Math.random() * 1500),
+            ordenes: Math.floor((baseRev + seasonality) / 65)
         };
-    };
+    });
 
-    const currentData = getMonthData(selectedMonth);
+    // Datos simulados para el gráfico de anillo (Categorías) a partir del catálogo real
+    const categoryCount = products.reduce((acc, p) => {
+        acc[p.category] = (acc[p.category] || 0) + 1;
+        return acc;
+    }, {} as Record<string, number>);
 
-    // Simular el Top 5 de ventas escogiendo pseudoleatoriamente del inventario real, y generandoles ventas variadas según el mes
-    const topProducts = [...products]
-        .filter(p => p.stock > 0)
-        .sort((a, b) => b.price - a.price)
-        .slice(0, 5)
-        .map((p, i) => {
-            // Rotar ventas según el mes para que la posición de los mejores vendedores parezca cambiar
-            const offset = (selectedMonth + i) % 5;
-            const maxSales = 45 - (selectedMonth % 3) * 5; // Ventas cambian por mes
+    const categoryData = Object.keys(categoryCount).length > 0
+        ? Object.entries(categoryCount).map(([k, v]) => ({ name: k, value: (v * 2000) + Math.floor(Math.random() * 1000) }))
+        : [
+            { name: "Jeans Levanta Cola", value: 8500 },
+            { name: "Bodys Reductores", value: 5300 },
+            { name: "Conjuntos Deportivos", value: 3200 }
+        ];
 
-            return {
-                ...p,
-                salesVolume: maxSales - (offset * 8),
-                progressPercent: 100 - (offset * 18)
-            };
-        });
+    const COLORS = ['#DDA7A5', '#FFC107', '#4CAF50', '#8B0000', '#5c4033', '#111111'];
+
+    const currentRevenue = trendData[11].ingresos;
+    const currentOrders = trendData[11].ordenes;
+    const avgTicket = currentRevenue / currentOrders;
 
     return (
         <div className="space-y-8 animate-fade-in-up">
-
             {/* Header Analítico */}
             <div className="flex flex-col md:flex-row justify-between items-center bg-[#0a0a0a] border border-gray-800/80 p-6 rounded-2xl shadow-xl">
                 <div>
-                    <h2 className="text-xl font-serif text-white tracking-wide">Reporte Financiero de {months[selectedMonth]}</h2>
-                    <p className="text-[11px] text-gray-500 uppercase tracking-widest mt-1">Métricas de rendimiento de tu E-Commerce</p>
-                </div>
-                <div className="mt-4 md:mt-0">
-                    <div className="relative">
-                        <select
-                            value={selectedMonth}
-                            onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                            className="appearance-none bg-[#111] border border-gray-700 text-white pl-4 pr-10 py-2 rounded-lg text-sm focus:outline-none focus:border-grecia-accent focus:ring-1 focus:ring-grecia-accent cursor-pointer shadow-inner transition-colors"
-                        >
-                            {months.map((m, index) => (
-                                <option key={m} value={index}>{m}</option>
-                            ))}
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                            <i className="fas fa-chevron-down text-[10px]"></i>
-                        </div>
-                    </div>
+                    <h2 className="text-xl font-serif text-white tracking-wide">Analítica y Rendimiento (Demo)</h2>
+                    <p className="text-[11px] text-gray-500 uppercase tracking-widest mt-1">Simulación proyectada basada en tu catálogo actual</p>
                 </div>
             </div>
 
             {/* Tarjetas de KPIs Principales */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-                {/* Ingresos Brutos */}
                 <div className="bg-gradient-to-br from-[#111] to-[#0a0a0a] p-8 rounded-3xl border border-gray-800/80 shadow-2xl relative overflow-hidden group">
                     <div className="absolute -right-4 -top-4 w-32 h-32 bg-grecia-accent/10 rounded-full blur-2xl group-hover:bg-grecia-accent/20 transition-all"></div>
-                    <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-4 mb-4">
                         <div className="w-12 h-12 rounded-full bg-grecia-accent/20 flex items-center justify-center text-grecia-accent text-xl">
                             <i className="fas fa-dollar-sign"></i>
                         </div>
-                        <span className={`${currentData.isPositiveGrowth ? 'text-green-400 bg-green-950/30' : 'text-red-400 bg-red-950/30'} text-[10px] font-bold flex items-center px-3 py-1 rounded-full`}>
-                            <i className={`fas ${currentData.isPositiveGrowth ? 'fa-arrow-up' : 'fa-arrow-down'} mr-1`}></i> {currentData.growth}
-                        </span>
                     </div>
-                    <h3 className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mb-1">Ingresos Brutos</h3>
-                    <p className="text-3xl md:text-5xl font-serif text-white tracking-tight">${currentData.revenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                    <h3 className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mb-1">Ingresos Brutos (Diciembre)</h3>
+                    <p className="text-3xl md:text-5xl font-serif text-white tracking-tight">${currentRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}</p>
                 </div>
 
-                {/* Pedidos Completados */}
                 <div className="bg-gradient-to-br from-[#111] to-[#0a0a0a] p-8 rounded-3xl border border-gray-800/80 shadow-2xl relative overflow-hidden group">
                     <div className="absolute -right-4 -top-4 w-32 h-32 bg-white/5 rounded-full blur-2xl group-hover:bg-white/10 transition-all"></div>
-                    <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-4 mb-4">
                         <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white text-xl">
                             <i className="fas fa-shopping-bag"></i>
                         </div>
                     </div>
                     <h3 className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mb-1">Órdenes Pagadas</h3>
-                    <p className="text-3xl md:text-5xl font-serif text-white tracking-tight">{currentData.orders.toLocaleString()}</p>
+                    <p className="text-3xl md:text-5xl font-serif text-white tracking-tight">{currentOrders.toLocaleString()}</p>
                 </div>
 
-                {/* Ticket Promedio */}
                 <div className="bg-gradient-to-br from-[#111] to-[#0a0a0a] p-8 rounded-3xl border border-gray-800/80 shadow-2xl relative overflow-hidden group">
                     <div className="absolute -right-4 -top-4 w-32 h-32 bg-[#FFC107]/10 rounded-full blur-2xl group-hover:bg-[#FFC107]/20 transition-all"></div>
-                    <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-4 mb-4">
                         <div className="w-12 h-12 rounded-full bg-[#FFC107]/20 flex items-center justify-center text-[#FFC107] text-xl">
                             <i className="fas fa-receipt"></i>
                         </div>
                     </div>
                     <h3 className="text-gray-500 text-[10px] uppercase tracking-widest font-bold mb-1">Ticket Promedio USD</h3>
-                    <p className="text-3xl md:text-5xl font-serif text-white tracking-tight">${currentData.ticket.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                    <p className="text-3xl md:text-5xl font-serif text-white tracking-tight">${avgTicket.toLocaleString('en-US', { maximumFractionDigits: 2 })}</p>
                 </div>
-
             </div>
 
-            {/* Top Ventas / Gráficos */}
-            <div className="bg-[#0a0a0a] border border-gray-800/80 p-8 rounded-3xl shadow-2xl">
-                <div className="flex items-center justify-between mb-8 border-b border-gray-800/50 pb-4">
-                    <h3 className="text-lg font-serif text-white flex items-center gap-3">
-                        <i className="fas fa-trophy text-[#FFC107]"></i> Top 5: Prendas Más Vendidas
-                    </h3>
-                    <span className="text-[10px] text-gray-500 uppercase tracking-widest">Rotación Principal</span>
+            {/* Gráficos Recharts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Gráfico de Líneas (Tendencias) */}
+                <div className="bg-[#0a0a0a] border border-gray-800/80 p-8 rounded-3xl shadow-2xl">
+                    <div className="mb-6">
+                        <h3 className="text-lg font-serif text-white flex items-center gap-3">
+                            <i className="fas fa-chart-line text-grecia-accent"></i> Tendencia Anual de Ingresos
+                        </h3>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">Ventas en los últimos 12 meses (USD)</p>
+                    </div>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={trendData} margin={{ top: 5, right: 30, left: -20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#222" vertical={false} />
+                                <XAxis dataKey="name" stroke="#666" fontSize={10} tickLine={false} axisLine={false} />
+                                <YAxis stroke="#666" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val / 1000}k`} />
+                                <RechartsTooltip
+                                    contentStyle={{ backgroundColor: '#111', borderColor: '#333', borderRadius: '8px', color: '#fff' }}
+                                    itemStyle={{ color: '#DDA7A5' }}
+                                    formatter={(value: unknown) => [`$${Number(value).toLocaleString('en-US', { maximumFractionDigits: 0 })}`, 'Ingresos']}
+                                />
+                                <Line type="monotone" dataKey="ingresos" stroke="#DDA7A5" strokeWidth={3} dot={{ r: 4, fill: '#111', stroke: '#DDA7A5', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#DDA7A5' }} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
 
-                <div className="space-y-6">
-                    {topProducts.length === 0 ? (
-                        <p className="text-gray-500 font-light text-sm italic py-4">Faltan datos de inventario para calcular tus mejores ventas.</p>
-                    ) : (
-                        topProducts.map((prod, index) => (
-                            <div key={prod.id} className="group">
-                                <div className="flex justify-between items-center mb-2">
-                                    <div className="flex items-center gap-4">
-                                        <span className={`font-serif text-lg ${index === 0 ? 'text-[#FFC107]' : index === 1 ? 'text-gray-300' : index === 2 ? 'text-[#cd7f32]' : 'text-gray-600'}`}>#{index + 1}</span>
-                                        { /* eslint-disable-next-line @next/next/no-img-element */}
-                                        <div className="w-8 h-8 rounded-full bg-gray-800 overflow-hidden border border-gray-700 relative">
-                                            <Image fill sizes="32px" src={prod.image} alt={prod.name} className="object-cover" />
-                                        </div>
-                                        <span className="text-sm font-medium text-gray-200 group-hover:text-white transition">{prod.name}</span>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="text-sm font-bold text-grecia-accent">{prod.salesVolume} <span className="font-light text-gray-500 text-[10px] uppercase">Ventas</span></span>
-                                    </div>
-                                </div>
-                                <div className="w-full bg-gray-900 rounded-full h-1.5 overflow-hidden">
-                                    <div
-                                        className="bg-grecia-accent h-1.5 rounded-full transition-all duration-1000 ease-out"
-                                        style={{ width: `${prod.progressPercent}%` }}
-                                    ></div>
-                                </div>
-                            </div>
-                        ))
-                    )}
+                {/* Gráfico de Anillo (Categorías) */}
+                <div className="bg-[#0a0a0a] border border-gray-800/80 p-8 rounded-3xl shadow-2xl">
+                    <div className="mb-6">
+                        <h3 className="text-lg font-serif text-white flex items-center gap-3">
+                            <i className="fas fa-chart-pie text-[#FFC107]"></i> Distribución por Categoría
+                        </h3>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-1">¿Qué productos generan más dinero?</p>
+                    </div>
+                    <div className="h-[300px] w-full flex items-center justify-center">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={categoryData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={70}
+                                    outerRadius={100}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                    stroke="none"
+                                >
+                                    {categoryData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <RechartsTooltip
+                                    contentStyle={{ backgroundColor: '#111', borderColor: '#333', borderRadius: '8px', color: '#fff' }}
+                                    formatter={(value: unknown) => [`$${Number(value).toLocaleString('en-US')}`, 'Ventas Est.']}
+                                />
+                                <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', color: '#bbb' }} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
+            </div>
+
+            {/* Alerta de Stock (Mantiene conectada a la base de datos real) */}
+            <div className="bg-red-950/20 border border-red-900/50 p-6 rounded-2xl flex items-center justify-between">
+                <div>
+                    <h4 className="text-red-400 font-bold text-sm mb-1"><i className="fas fa-exclamation-triangle mr-2"></i> Alerta de Inventario</h4>
+                    <p className="text-gray-400 text-xs">
+                        Tienes {products.filter(p => p.stock === 0).length} productos agotados y {products.filter(p => p.stock > 0 && p.stock <= 3).length} a punto de agotarse.
+                    </p>
+                </div>
+                <button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="bg-red-950 hover:bg-red-900 text-red-300 px-4 py-2 rounded text-xs font-bold transition">
+                    Revisar Inventario
+                </button>
             </div>
         </div>
     );

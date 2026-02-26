@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
+import ReceiptEmail from '@/components/emails/ReceiptEmail';
+
+const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy');
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
     apiVersion: '2026-02-25.clover',
@@ -14,8 +18,10 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Faltan parámetros de sesión o carrito.' }, { status: 400 });
         }
 
-        // 1. Obtener la sesión real de Stripe
-        const session = await stripe.checkout.sessions.retrieve(sessionId);
+        // 1. Obtener la sesión real de Stripe con los line_items
+        const session = await stripe.checkout.sessions.retrieve(sessionId, {
+            expand: ['line_items']
+        });
 
         // Si el pago no está completo, rechazar.
         if (session.payment_status !== 'paid') {
@@ -23,6 +29,8 @@ export async function POST(req: Request) {
         }
 
         const userId = session.client_reference_id;
+        const customerEmail = session.customer_details?.email;
+        const customerName = session.customer_details?.name || 'Cliente';
         if (!userId) {
             return NextResponse.json({ error: 'La sesión no tiene un usuario asociado' }, { status: 400 });
         }
@@ -99,6 +107,33 @@ export async function POST(req: Request) {
         } catch (stockError) {
             console.error("Error al descontar stock (la orden sí se guardó):", stockError);
             // No detenemos el flujo, la orden ya fue pagada y registrada en el paso 4.
+        }
+
+        // 6. Enviar Recibo por Correo con Resend
+        if (customerEmail && process.env.RESEND_API_KEY) {
+            try {
+                // Formatear items desde Stripe line_items
+                const emailItems = session.line_items?.data.map(lineItem => ({
+                    name: lineItem.description || 'Producto',
+                    quantity: lineItem.quantity || 1,
+                    price: (lineItem.amount_total / 100) / (lineItem.quantity || 1)
+                })) || [];
+
+                await resend.emails.send({
+                    from: 'Grecia Fashion Store <ventas@tu-dominio.com>', // CAMBIAR "tu-dominio.com" UNA VEZ CONFIGURADO RESEND
+                    to: [customerEmail],
+                    subject: `Confirmación de Pedido - ${newOrder?.id?.split('-')[0] || 'GRC'}`,
+                    react: ReceiptEmail({
+                        customerName: customerName,
+                        orderId: newOrder?.id || sessionId,
+                        items: emailItems,
+                        total: totalAmount
+                    })
+                });
+                console.log("Email de recibo enviado a:", customerEmail);
+            } catch (emailError) {
+                console.error("No se pudo enviar el recibo (Stripe/Resend)", emailError);
+            }
         }
 
         return NextResponse.json({ success: true, order: newOrder });
