@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAppContext, Product } from "@/context/AppContext";
 import LogoutButton from "@/components/ui/LogoutButton";
+import Image from "next/image";
 
 export default function AdminDashboard() {
     const { products, addProduct, updateProduct, deleteProduct } = useAppContext();
@@ -430,7 +431,7 @@ export default function AdminDashboard() {
                                                             <td className="px-3 py-3 flex items-center gap-3">
                                                                 <div className="relative h-10 w-8 overflow-hidden bg-black flex-shrink-0 border border-gray-800 group-hover:border-gray-600 transition rounded-sm">
                                                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                                    <img src={prod.image} alt="thumb" className={`w-full h-full object-cover ${isOutOfStock ? 'grayscale opacity-40' : ''}`} />
+                                                                    <Image src={prod.image} alt="thumb" width={40} height={40} className={`w-full h-full object-cover ${isOutOfStock ? 'grayscale opacity-40' : ''}`} />
                                                                 </div>
                                                                 <span className={`font-serif tracking-wide truncate max-w-[120px] lg:max-w-[150px] xl:max-w-[200px] ${isOutOfStock ? 'text-gray-600 line-through' : 'text-gray-100'}`} title={prod.name}>
                                                                     {prod.name}
@@ -639,8 +640,8 @@ function AnalyticsDashboard({ products }: { products: Product[] }) {
                                     <div className="flex items-center gap-4">
                                         <span className={`font-serif text-lg ${index === 0 ? 'text-[#FFC107]' : index === 1 ? 'text-gray-300' : index === 2 ? 'text-[#cd7f32]' : 'text-gray-600'}`}>#{index + 1}</span>
                                         { /* eslint-disable-next-line @next/next/no-img-element */}
-                                        <div className="w-8 h-8 rounded-full bg-gray-800 overflow-hidden border border-gray-700">
-                                            <img src={prod.image} alt={prod.name} className="w-full h-full object-cover" />
+                                        <div className="w-8 h-8 rounded-full bg-gray-800 overflow-hidden border border-gray-700 relative">
+                                            <Image fill sizes="32px" src={prod.image} alt={prod.name} className="object-cover" />
                                         </div>
                                         <span className="text-sm font-medium text-gray-200 group-hover:text-white transition">{prod.name}</span>
                                     </div>

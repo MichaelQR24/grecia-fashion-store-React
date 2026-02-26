@@ -8,7 +8,8 @@ async function verifyAdmin() {
 
     if (!user) return { error: 'Acceso denegado. No hay sesión.' };
 
-    if (user.email !== 'greciafashionstore2@gmail.com') {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (user.email !== adminEmail) {
         return { error: 'No autorizado. Se requiere rol de administrador.' };
     }
     return { success: true };

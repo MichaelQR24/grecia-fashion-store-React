@@ -15,7 +15,8 @@ export async function GET(request: Request) {
             // Asumiendo que el inicio de sesión fue exitoso, comprobemos el rol dinámicamente
             const { data: { user } } = await supabase.auth.getUser();
 
-            if (user?.email === 'greciafashionstore2@gmail.com') {
+            const adminEmail = process.env.ADMIN_EMAIL;
+            if (user?.email === adminEmail) {
                 return NextResponse.redirect(`${requestUrl.origin}/admin`);
             }
 

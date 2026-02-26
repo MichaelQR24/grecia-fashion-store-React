@@ -35,7 +35,8 @@ export async function updateSession(request: NextRequest) {
 
     // RUTAS PROTEGIDAS /admin
     if (pathname.startsWith('/admin')) {
-        if (!user || user.email !== 'greciafashionstore2@gmail.com') {
+        const adminEmail = process.env.ADMIN_EMAIL;
+        if (!user || user.email !== adminEmail) {
             return NextResponse.redirect(new URL('/', request.url));
         }
     }

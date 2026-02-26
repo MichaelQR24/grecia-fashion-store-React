@@ -68,26 +68,32 @@ export async function POST(req: Request) {
             throw error;
         }
 
-        // 5. Reducir el Stock en la Base de Datos ('products')
+        // 5. Reducir el Stock en la Base de Datos ('products') de FORMA SEGURA (Evitando Race Conditions)
         try {
-            // Se usa el Service Role en el backend para poder sobreescribir stocks si es necesario sin chocar con RLS
-            // Pero por simplicidad de nuestro entorno actual usaremos el array de elementos del carrito:
             await Promise.all(cartItems.map(async (item: { id: string; quantity: number }) => {
-                // Selecciona el stock actual del producto
-                const { data: productData, error: fetchError } = await supabase
-                    .from('products')
-                    .select('stock')
-                    .eq('id', item.id)
-                    .single();
+                // LLAMADA RPC (Remote Procedure Call) a Postgres. Restará atómicamente en la capa de base de datos.
+                // REQUIERE crear esta función en el panel SQL de Supabase:
+                /* 
+                   create or replace function decrement_stock(product_id uuid, deduct_amount int)
+                   returns void as $$
+                   begin
+                     update products set stock = greatest(0, stock - deduct_amount) where id = product_id;
+                   end;
+                   $$ language plpgsql;
+                */
+                const { error: rpcError } = await supabase.rpc('decrement_stock', {
+                    product_id: item.id,
+                    deduct_amount: item.quantity
+                });
 
-                if (!fetchError && productData) {
-                    const newStock = Math.max(0, productData.stock - item.quantity);
-
-                    // Actualiza con el nuevo stock reducido
-                    await supabase
-                        .from('products')
-                        .update({ stock: newStock })
-                        .eq('id', item.id);
+                if (rpcError) {
+                    console.error("Error en RPC decrement_stock:", rpcError);
+                    // Fallback (NO RECOMENDADO PARA PRODUCCIÓN POR RACE CONDITIONS):
+                    const { data: productData, error: fetchError } = await supabase.from('products').select('stock').eq('id', item.id).single();
+                    if (!fetchError && productData) {
+                        const newStock = Math.max(0, productData.stock - item.quantity);
+                        await supabase.from('products').update({ stock: newStock }).eq('id', item.id);
+                    }
                 }
             }));
         } catch (stockError) {
