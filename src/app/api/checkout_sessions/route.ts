@@ -38,8 +38,10 @@ export async function POST(req: Request) {
             cancel_url: `${destinationUrl}/checkout/canceled`,
             submit_type: 'pay',
             billing_address_collection: 'required',
+            allow_promotion_codes: true, // Esto habilita el input de códigos de descuento de Stripe
+            phone_number_collection: { enabled: true }, // Recolectar teléfono del cliente
             shipping_address_collection: {
-                allowed_countries: ['US', 'CA', 'MX', 'CO'], // Configurado para América por defecto
+                allowed_countries: ['US', 'CA', 'MX', 'CO', 'PE'], // Configurado para América por defecto
             }
         });
 

@@ -18,9 +18,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Faltan parámetros de sesión o carrito.' }, { status: 400 });
         }
 
-        // 1. Obtener la sesión real de Stripe con los line_items
+        // 1. Obtener la sesión real de Stripe con los line_items y el código promocional
         const session = await stripe.checkout.sessions.retrieve(sessionId, {
-            expand: ['line_items']
+            expand: ['line_items', 'discounts.promotion_code']
         });
 
         // Si el pago no está completo, rechazar.
@@ -56,8 +56,31 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: true, message: 'Orden ya existente', orderId: existingOrder.id });
         }
 
-        // 4. Insertar la nueva orden
+        // 4. Procesar carrito de compra e inyectar Metadatos del Cupón si los hay
         const totalAmount = session.amount_total ? session.amount_total / 100 : 0; // Convertir de centavos a Dólares
+        let finalCartItems = [...cartItems];
+
+        if (session.total_details && session.total_details.amount_discount > 0) {
+            const discountAmount = session.total_details.amount_discount / 100;
+            let couponCode = 'DESCUENTO APLICADO';
+
+            if (session.discounts && session.discounts.length > 0) {
+                const promo = session.discounts[0].promotion_code as Stripe.PromotionCode;
+                if (promo && promo.code) {
+                    couponCode = promo.code;
+                }
+            }
+
+            finalCartItems.push({
+                isMetadata: true,
+                type: 'discount_info',
+                code: couponCode,
+                amount: discountAmount,
+                originalSubtotal: (session.amount_subtotal || 0) / 100
+            });
+        }
+
+        const customerPhone = session.customer_details?.phone || null;
 
         const { data: newOrder, error } = await supabase
             .from('orders')
@@ -65,8 +88,11 @@ export async function POST(req: Request) {
                 user_id: userId,
                 stripe_session_id: sessionId,
                 total_amount: totalAmount,
-                cart_items: cartItems,
-                status: 'paid'
+                cart_items: finalCartItems,
+                status: 'paid',
+                customer_name: customerName,
+                customer_email: customerEmail,
+                customer_phone: customerPhone
             })
             .select()
             .single();
