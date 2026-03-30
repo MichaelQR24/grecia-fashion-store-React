@@ -5,6 +5,8 @@ import { createClient } from '@/utils/supabase/server';
 import { rateLimit } from '@/lib/rateLimit';
 import type { CartItemRequest } from '@/types';
 
+export const runtime = 'edge';
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
     apiVersion: '2026-02-25.clover',
 });

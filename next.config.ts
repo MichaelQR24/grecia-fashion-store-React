@@ -46,6 +46,24 @@ const nextConfig: NextConfig = {
       },
     ]
   },
+  experimental: {
+    // Evita cargar todos los módulos de estas librerías, ahorrando megabytes en el servidor
+    optimizePackageImports: ['@sentry/nextjs', 'stripe', 'recharts', 'lucide-react', 'react-hot-toast', '@supabase/supabase-js'],
+  },
+  webpack: (config, { webpack }) => {
+    // IGNORAR @vercel/og por completo para ahorrar 2.1 MB de archivos .wasm que no usas (resvg, yoga)
+    // Esto es CLAVE para no superar el límite de 3MB de Cloudflare Workers Free
+    config.plugins.push(
+      new webpack.IgnorePlugin({
+        resourceRegExp: /@vercel\/og/,
+      }),
+      new webpack.IgnorePlugin({
+        resourceRegExp: /resvg\.wasm|yoga\.wasm/,
+      })
+    );
+
+    return config;
+  },
 };
 
 // ✅ R3: Sentry build instrumentation

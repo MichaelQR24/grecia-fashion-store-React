@@ -4,6 +4,8 @@ import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@supabase/supabase-js';
 import type { WebhookCartItem, DiscountMetadata } from '@/types';
 
+export const runtime = 'edge';
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
     apiVersion: '2026-02-25.clover',
 });
