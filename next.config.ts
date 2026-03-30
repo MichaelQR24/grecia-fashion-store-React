@@ -61,3 +61,5 @@ export default withSentryConfig(nextConfig, {
   // No fallar el build si Sentry no está configurado aún
   authToken: process.env.SENTRY_AUTH_TOKEN,
 });
+
+import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());
