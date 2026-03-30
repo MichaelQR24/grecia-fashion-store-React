@@ -52,8 +52,8 @@ const nextConfig: NextConfig = {
 // Solo activo si SENTRY_AUTH_TOKEN está definido (no bloquea builds sin él)
 export default withSentryConfig(nextConfig, {
   // Subida de Source Maps para poder ver stack traces legibles en Sentry
-  org: process.env.SENTRY_ORG || 'grecia-fashion',
-  project: process.env.SENTRY_PROJECT || 'grecia-fashion-store',
+  org: process.env.SENTRY_ORG || 'grecia-fashion-store',
+  project: process.env.SENTRY_PROJECT || 'javascript-nextjs',
 
   // Silenciar logs del build de Sentry para que no ensucien la consola
   silent: !process.env.CI,
