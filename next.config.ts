@@ -47,31 +47,8 @@ const nextConfig: NextConfig = {
     ]
   },
   experimental: {
-    // Evita cargar todos los módulos de estas librerías, ahorrando megabytes en el servidor
+    // Evita cargar todos los módulos de estas librerías, ahorrando megabytes en el servidor y acelerando el arranque (Cold Start) en Vercel.
     optimizePackageImports: ['@sentry/nextjs', 'stripe', 'recharts', 'lucide-react', 'react-hot-toast', '@supabase/supabase-js'],
-  },
-  outputFileTracingExcludes: {
-    '*': [
-      'node_modules/next/dist/compiled/@vercel/og/**/*',
-      'node_modules/@vercel/og/**/*',
-      'node_modules/canvas/**/*',
-      'node_modules/jsdom/**/*',
-      'node_modules/resend/**/*',
-    ],
-  },
-  webpack: (config, { webpack }) => {
-    // IGNORAR @vercel/og por completo para ahorrar 2.1 MB de archivos .wasm que no usas (resvg, yoga)
-    // Esto es CLAVE para no superar el límite de 3MB de Cloudflare Workers Free
-    config.plugins.push(
-      new webpack.IgnorePlugin({
-        resourceRegExp: /@vercel\/og/,
-      }),
-      new webpack.IgnorePlugin({
-        resourceRegExp: /resvg\.wasm|yoga\.wasm/,
-      })
-    );
-
-    return config;
   },
 };
 
@@ -85,10 +62,10 @@ export default withSentryConfig(nextConfig, {
   // Solo subir source maps si tenemos el token; así evitamos que el build falle en CI sin credenciales
   authToken: process.env.SENTRY_AUTH_TOKEN,
 
-  // Silenciar logs del build de Sentry para que no ensucien la consola de Cloudflare
+  // Silenciar logs de Sentry para no ensuciar el despliegue
   silent: true,
 
-  // Optimización para Cloudflare (evita agotar la RAM de 8GB del build agent)
+  // Optimización (evita agotar la RAM durante el build)
   widenClientFileUpload: true,
 
   // Ruta del túnel para saltar AdBlockers (opcional pero recomendado)
