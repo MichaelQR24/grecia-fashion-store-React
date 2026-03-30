@@ -49,15 +49,21 @@ const nextConfig: NextConfig = {
 };
 
 // ✅ R3: Sentry build instrumentation
-// Solo activo si SENTRY_AUTH_TOKEN está definido (no bloquea builds sin él)
+// Esta configuración es robusta: si no hay token o DSN, no rompe el build.
 export default withSentryConfig(nextConfig, {
   // Subida de Source Maps para poder ver stack traces legibles en Sentry
   org: process.env.SENTRY_ORG || 'grecia-fashion-store',
   project: process.env.SENTRY_PROJECT || 'javascript-nextjs',
 
-  // Silenciar logs del build de Sentry para que no ensucien la consola
-  silent: !process.env.CI,
-
-  // No fallar el build si Sentry no está configurado aún
+  // Solo subir source maps si tenemos el token; así evitamos que el build falle en CI sin credenciales
   authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  // Silenciar logs del build de Sentry para que no ensucien la consola de Cloudflare
+  silent: true,
+
+  // Optimización para Cloudflare (evita agotar la RAM de 8GB del build agent)
+  widenClientFileUpload: true,
+
+  // Ruta del túnel para saltar AdBlockers (opcional pero recomendado)
+  tunnelRoute: "/monitoring-sentry",
 });
