@@ -50,6 +50,15 @@ const nextConfig: NextConfig = {
     // Evita cargar todos los módulos de estas librerías, ahorrando megabytes en el servidor
     optimizePackageImports: ['@sentry/nextjs', 'stripe', 'recharts', 'lucide-react', 'react-hot-toast', '@supabase/supabase-js'],
   },
+  outputFileTracingExcludes: {
+    '*': [
+      'node_modules/next/dist/compiled/@vercel/og/**/*',
+      'node_modules/@vercel/og/**/*',
+      'node_modules/canvas/**/*',
+      'node_modules/jsdom/**/*',
+      'node_modules/resend/**/*',
+    ],
+  },
   webpack: (config, { webpack }) => {
     // IGNORAR @vercel/og por completo para ahorrar 2.1 MB de archivos .wasm que no usas (resvg, yoga)
     // Esto es CLAVE para no superar el límite de 3MB de Cloudflare Workers Free
