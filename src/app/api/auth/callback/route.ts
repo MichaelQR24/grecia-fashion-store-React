@@ -4,23 +4,26 @@ import { createClient } from '@/utils/supabase/server';
 export async function GET(request: Request) {
     const requestUrl = new URL(request.url);
     const code = requestUrl.searchParams.get('code');
-    // Si queremos redirigir a un lugar distinto por default (ej: el dashboard del user)
-    const next = requestUrl.searchParams.get('next') ?? '/';
+    const nextRaw = requestUrl.searchParams.get('next') ?? '/';
+
+    // ✅ Sanitizar el parámetro 'next' para prevenir Open Redirect
+    // Solo permitir rutas internas relativas (empiezan con '/' pero no con '//')
+    const safeNext = (nextRaw.startsWith('/') && !nextRaw.startsWith('//')) ? nextRaw : '/';
 
     if (code) {
         const supabase = await createClient();
         const { error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (!error) {
-            // Asumiendo que el inicio de sesión fue exitoso, comprobemos el rol dinámicamente
+            // Comprobar el rol dinámicamente vía user_metadata
             const { data: { user } } = await supabase.auth.getUser();
+            const { isAdmin } = await import('@/lib/permissions');
 
-            const adminEmail = process.env.ADMIN_EMAIL;
-            if (user?.email === adminEmail) {
+            if (isAdmin(user)) {
                 return NextResponse.redirect(`${requestUrl.origin}/admin`);
             }
 
-            return NextResponse.redirect(`${requestUrl.origin}${next}`);
+            return NextResponse.redirect(`${requestUrl.origin}${safeNext}`);
         }
     }
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Categories() {
     const categories = [
@@ -49,11 +50,12 @@ export default function Categories() {
                         <Link href={`#store`} key={cat.id} className="group block relative overflow-hidden rounded-[2rem] h-[450px] shadow-2xl hover:shadow-[0_20px_40px_rgba(221,167,165,0.1)] transition-all duration-700 animate-fade-in-up" style={{ animationDelay: `${index * 0.15}s` }}>
                             <div className="absolute inset-0 bg-black/30 group-hover:bg-[#4a2e2d]/40 transition duration-700 z-10"></div>
                             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10 transition duration-700"></div>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
+                            <Image
                                 src={cat.image}
                                 alt={cat.title}
-                                className="w-full h-full object-cover transform group-hover:scale-105 transition duration-[1.5s] ease-out"
+                                fill
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                className="object-cover transform group-hover:scale-105 transition duration-[1.5s] ease-out"
                             />
                             <div className="absolute bottom-0 left-0 right-0 p-8 z-20 transform translate-y-6 group-hover:translate-y-0 transition duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
                                 <h3 className="text-2xl font-serif font-light text-white mb-2">{cat.title}</h3>

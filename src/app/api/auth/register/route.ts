@@ -1,8 +1,22 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { rateLimit } from '@/lib/rateLimit';
 
 export async function POST(request: Request) {
     try {
+        // ✅ Rate Limiting: máximo 3 registros por minuto por IP
+        const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+            || request.headers.get('x-real-ip')
+            || 'unknown';
+        const limiter = rateLimit(`register:${ip}`, 3, 60_000);
+
+        if (!limiter.allowed) {
+            return NextResponse.json(
+                { success: false, message: `Demasiados intentos de registro. Espera ${Math.ceil(limiter.retryAfterMs / 1000)}s.` },
+                { status: 429, headers: { 'Retry-After': String(Math.ceil(limiter.retryAfterMs / 1000)) } }
+            );
+        }
+
         const { email, password, phone } = await request.json();
         const supabase = await createClient();
 
@@ -43,3 +57,4 @@ export async function POST(request: Request) {
         );
     }
 }
+

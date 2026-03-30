@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
-import { supabase as supabaseAdmin } from '@/lib/supabase';
+import { supabasePublic } from '@/lib/supabase';
 import { createClient } from '@/utils/supabase/server';
+import { isAdmin } from '@/lib/permissions';
+
+// ISR: regenerar la caché del catálogo cada 60 segundos
+export const revalidate = 60;
 
 // --- 1. LECTURA (GET) - Público ---
 export async function GET() {
     try {
-        const { data: products, error } = await supabaseAdmin
+        const { data: products, error } = await supabasePublic
             .from('products')
             .select('*')
             .order('created_at', { ascending: false });
@@ -30,7 +34,7 @@ export async function POST(request: Request) {
 
         if (!user) return NextResponse.json({ error: 'Acceso denegado. No hay sesión válida.' }, { status: 401 });
 
-        if (user.email !== 'greciafashionstore2@gmail.com') {
+        if (!isAdmin(user)) {
             return NextResponse.json({ error: 'Privilegios insuficientes. Sólo administradores pueden crear productos.' }, { status: 403 });
         }
 

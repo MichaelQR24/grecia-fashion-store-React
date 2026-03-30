@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useAppContext } from "@/context/AppContext";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useProductStore } from "@/store/useProductStore";
+import { useCartStore } from "@/store/useCartStore";
 import CartSidebar from "@/components/cart/CartSidebar";
 import { createClient } from "@/utils/supabase/client";
+import { isAdmin } from "@/lib/permissions";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -18,11 +21,17 @@ export default function Header() {
       setIsScrolled(window.scrollY > 30);
     };
     window.addEventListener("scroll", handleScroll);
+
+    // Inicializar Zustands globales al montar la App
+    useAuthStore.getState().initialize();
+    useProductStore.getState().initialize();
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   // Estados Globales Simulación Login y Carrito
-  const { user, userRole, setUserRole, cart } = useAppContext();
+  const { user, userRole, setUserRole } = useAuthStore();
+  const { cart } = useCartStore();
 
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
 
@@ -37,53 +46,55 @@ export default function Header() {
     setLoginError("");
 
     try {
-      const supabase = createClient();
-
       if (!isLoginMode) {
-        // Registro
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
+        // ✅ Registro vía API (con rate limiting)
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, phone }),
         });
+        const data = await res.json();
 
-        if (error) {
-          setLoginError(error.message);
+        if (!res.ok || !data.success) {
+          setLoginError(data.message || 'Error en el registro.');
         } else {
-          setLoginError("✅ ¡Registro exitoso! Por favor revisa tu correo.");
+          setLoginError(data.message || "✅ ¡Registro exitoso! Revisa tu correo.");
           setIsLoginMode(true);
         }
         return;
       }
 
-      // Login
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      // ✅ Login vía API (con rate limiting de 5 intentos/min)
+      const res = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
+      const data = await res.json();
 
-      if (error || !data.user) {
-        setLoginError("Credenciales incorrectas o servidor fallando.");
+      if (!res.ok || !data.success) {
+        setLoginError(data.message || "Credenciales incorrectas.");
         return;
       }
 
-      // Login Exitoso (Cookies ya fueron seteadas por Supabase JS)
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'greciafashionstore2@gmail.com';
-      const role = data.user.email === adminEmail ? 'admin' : 'user';
-      setUserRole(role);
+      // Login exitoso — sincronizar sesión del SDK con la cookie ya creada por el servidor
+      const supabase = createClient();
+      await supabase.auth.signInWithPassword({ email, password });
 
+      setUserRole(data.role);
       setLoginModalOpen(false);
       setEmail("");
       setPassword("");
       setPhone("");
 
-      // Redirección Automática con Refresco de Estado (Hard Navigate)
-      if (role === 'admin') {
+      // Redirección con refresco de estado
+      if (data.role === 'admin') {
         window.location.href = '/admin';
       } else {
         window.location.href = '/';
       }
     } catch {
-      setLoginError("Error conectando con el servidor local.");
+      setLoginError("Error conectando con el servidor.");
     }
   };
 
@@ -137,7 +148,7 @@ export default function Header() {
 
           {/* MOBILE LEFT: Hamburger Menu */}
           <div className="flex-1 md:hidden flex justify-start">
-            <button className="text-white text-2xl" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <button className="text-white text-2xl" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Abrir menú de navegación">
               <i className="fas fa-bars"></i>
             </button>
           </div>
@@ -193,7 +204,7 @@ export default function Header() {
                 </button>
               </div>
             ) : (
-              <button onClick={() => setLoginModalOpen(true)} className="text-white hover:text-grecia-accent transition" title="Iniciar Sesión">
+              <button onClick={() => setLoginModalOpen(true)} className="text-white hover:text-grecia-accent transition" title="Iniciar Sesión" aria-label="Iniciar sesión o crear cuenta">
                 <i className="fas fa-user text-[1.35rem]" id="user-icon"></i>
               </button>
             )}
@@ -202,6 +213,7 @@ export default function Header() {
             <button
               className="text-white hover:text-grecia-accent transition relative flex items-center justify-center p-2 rounded-full cursor-pointer"
               onClick={() => setCartOpen(true)}
+              aria-label="Abrir carrito de compras"
             >
               <i className="fas fa-shopping-bag text-2xl"></i>
               {cartCount > 0 && (

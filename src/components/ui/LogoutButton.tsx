@@ -1,11 +1,11 @@
 "use client";
 
-import { useAppContext } from "@/context/AppContext";
+import { useAuthStore } from "@/store/useAuthStore";
 
 import { createClient } from "@/utils/supabase/client";
 
 export default function LogoutButton() {
-    const { setUserRole } = useAppContext();
+    const { setUserRole } = useAuthStore();
 
     const handleLogout = async () => {
         try {

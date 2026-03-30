@@ -2,6 +2,8 @@ import { createClient } from '@/utils/supabase/server';
 import LogoutButton from "@/components/ui/LogoutButton";
 import ProfileForm from "./ProfileForm";
 import Link from 'next/link';
+import Image from 'next/image';
+import { isAdmin } from "@/lib/permissions";
 
 export default async function UserDashboard() {
     // 1. Verificación Server-Side de Sesión con Supabase
@@ -14,7 +16,7 @@ export default async function UserDashboard() {
     if (user) {
         userEmail = user.email || "cliente@grecia.com";
         // Si el correo es el del administrador, le asignamos el rol
-        userRole = user.email === 'greciafashionstore2@gmail.com' ? 'admin' : 'user';
+        userRole = isAdmin(user) ? 'admin' : 'user';
     }
 
     // 1.5 Obtener Historial de Pedidos del Usuario
@@ -110,11 +112,10 @@ export default async function UserDashboard() {
                                             </div>
 
                                             <div className="flex -space-x-3">
-                                                {/* Mostrar miniaturas de los items comprados */}
-                                                {(order.cart_items).slice(0, 4).map((item, idx: number) => (
-                                                    <div key={idx} className="relative w-10 h-10 rounded-full border border-gray-600 object-cover" style={{ zIndex: 10 - idx }} title={item.name}>
-                                                        { /* eslint-disable-next-line @next/next/no-img-element */}
-                                                        <img src={item.image} alt={item.name} className="w-full h-full object-cover rounded-full" />
+                                                {/* Mostrar miniaturas de los items comprados (excluir metadata de descuento) */}
+                                                {(order.cart_items).filter(i => i.image && !('isMetadata' in i && i.isMetadata)).slice(0, 4).map((item, idx: number) => (
+                                                    <div key={idx} className="relative w-10 h-10 rounded-full border border-gray-600 overflow-hidden" style={{ zIndex: 10 - idx }} title={item.name || 'Producto'}>
+                                                        <Image src={item.image} alt={item.name || 'Producto'} width={40} height={40} className="object-cover rounded-full" />
                                                     </div>
                                                 ))}
                                                 {(order.cart_items).length > 4 && (

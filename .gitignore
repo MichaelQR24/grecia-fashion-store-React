@@ -48,3 +48,6 @@ eslint-detailed.txt
 eslint-report.json
 lint-results.txt
 audit-report.json
+
+# Stripe CLI binary (desarrollo local)
+stripe.exe

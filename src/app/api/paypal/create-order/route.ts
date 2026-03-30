@@ -1,4 +1,8 @@
 import { NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
+import { createClient } from '@/utils/supabase/server';
+import { rateLimit } from '@/lib/rateLimit';
+import type { CartItemRequest } from '@/types';
 
 const PAYPAL_API_BASE = 'https://api-m.sandbox.paypal.com'; // Usar 'https://api-m.paypal.com' para Producción
 
@@ -32,16 +36,69 @@ async function getPayPalAccessToken() {
 
 // Endpoint Principal: Servidor crea la orden para entregarla segura al navegador
 export async function POST(req: Request) {
+    // ✅ R1: Rate Limiting — máximo 10 solicitudes de PayPal por minuto por IP
+    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+        || req.headers.get('x-real-ip')
+        || 'unknown';
+    const limiter = rateLimit(`paypal:${ip}`, 10, 60_000);
+    if (!limiter.allowed) {
+        return NextResponse.json(
+            { error: `Demasiadas solicitudes. Espera ${Math.ceil(limiter.retryAfterMs / 1000)}s antes de reintentar.` },
+            { status: 429, headers: { 'Retry-After': String(Math.ceil(limiter.retryAfterMs / 1000)) } }
+        );
+    }
+
     try {
         const { items } = await req.json();
 
-        // 1. Calculamos el total estricto desde el Backend. (Nunca confiar en el valor del Front-End)
-        const total = items.reduce((sum: number, item: { price: number; quantity: number }) => sum + (item.price * item.quantity), 0).toFixed(2);
+        if (!items || items.length === 0) {
+            return NextResponse.json({ error: 'El carrito está vacío.' }, { status: 400 });
+        }
 
-        // 2. Autenticación máquina-a-máquina con PayPal
+        // 1. EXTRAER IDS DEL CARRITO
+        const productIds = items.map((item: CartItemRequest) => item.id);
+
+        // 2. CONSULTAR PRECIOS Y STOCK REALES DESDE SUPABASE (Nunca confiar en el Front-End)
+        const supabase = await createClient();
+        const { data: realProducts, error } = await supabase
+            .from('products')
+            .select('id, name, price, stock')
+            .in('id', productIds);
+
+        if (error || !realProducts) {
+            return NextResponse.json({ error: 'Error verificando catálogo de seguridad.' }, { status: 500 });
+        }
+
+        // 3. VERIFICAR STOCK Y CONSTRUIR ITEMS CON PRECIOS DEL SERVIDOR
+        const verifiedItems: { id: string; name: string; price: number; quantity: number }[] = [];
+
+        for (const cartItem of items) {
+            const realProduct = realProducts.find(p => p.id === cartItem.id);
+            if (!realProduct) {
+                return NextResponse.json({ error: `Producto no encontrado: ${cartItem.id}` }, { status: 400 });
+            }
+            if (realProduct.stock < cartItem.quantity) {
+                return NextResponse.json({ error: `Sin stock suficiente para: ${realProduct.name}` }, { status: 400 });
+            }
+            verifiedItems.push({
+                id: realProduct.id,
+                name: realProduct.name,
+                price: realProduct.price,       // ✅ PRECIO 100% DEL SERVIDOR
+                quantity: cartItem.quantity,
+            });
+        }
+
+        // 4. CALCULAR TOTAL CON PRECIOS VERIFICADOS
+        const total = verifiedItems
+            .reduce((sum, item) => sum + (item.price * item.quantity), 0)
+            .toFixed(2);
+
+        // 5. Autenticación máquina-a-máquina con PayPal
         const accessToken = await getPayPalAccessToken();
 
-        // 3. Crear Estructura de "Orden a Cobrar"
+        // 6. Crear Estructura de "Orden a Cobrar" con datos verificados
+        const origin = new URL(req.url).origin; // ✅ Usar origin del servidor, no del cliente
+
         const orderPayload = {
             intent: "CAPTURE",
             purchase_units: [
@@ -56,11 +113,11 @@ export async function POST(req: Request) {
                             }
                         }
                     },
-                    items: items.map((item: { name: string; price: number; quantity: number }) => ({
+                    items: verifiedItems.map((item) => ({
                         name: item.name,
                         unit_amount: {
                             currency_code: "USD",
-                            value: item.price.toFixed(2)
+                            value: item.price.toFixed(2)  // ✅ Precio del servidor
                         },
                         quantity: String(item.quantity),
                         category: "PHYSICAL_GOODS"
@@ -69,10 +126,10 @@ export async function POST(req: Request) {
                 }
             ],
             application_context: {
-                shipping_preference: "GET_FROM_FILE", // Que Paypal solicite y nos devuelva la dirección del usuario
+                shipping_preference: "GET_FROM_FILE",
                 user_action: "PAY_NOW",
-                return_url: `${req.headers.get("origin")}/checkout/success`,
-                cancel_url: `${req.headers.get("origin")}/checkout/canceled`
+                return_url: `${origin}/checkout/success`,
+                cancel_url: `${origin}/checkout/canceled`
             }
         };
 
@@ -95,6 +152,11 @@ export async function POST(req: Request) {
         return NextResponse.json({ orderID: data.id, links: data.links }, { status: 200 });
 
     } catch (err: unknown) {
+        // ✅ R3: Reporte a Sentry en producción + log local
+        Sentry.captureException(err, {
+            tags: { endpoint: 'paypal_create_order', layer: 'payment' },
+            extra: { ip },
+        });
         console.error('PayPal Integration API Error:', err);
         return NextResponse.json({ error: (err as Error).message }, { status: 500 });
     }

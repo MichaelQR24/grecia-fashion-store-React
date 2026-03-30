@@ -1,7 +1,10 @@
 "use client";
 
-import { useAppContext } from "@/context/AppContext";
+import { useAuthStore } from "@/store/useAuthStore";
+import { useCartStore } from "@/store/useCartStore";
 import { useState } from "react";
+import Image from "next/image";
+import toast from "react-hot-toast";
 
 interface CartSidebarProps {
     isOpen: boolean;
@@ -9,7 +12,8 @@ interface CartSidebarProps {
 }
 
 export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
-    const { cart, removeFromCart, updateCartItemQuantity, clearCart, user } = useAppContext();
+    const { user } = useAuthStore();
+    const { cart, removeFromCart, updateCartItemQuantity, clearCart } = useCartStore();
     const [isStripeLoading, setIsStripeLoading] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
 
@@ -22,7 +26,7 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
     const handleStripeCheckout = async () => {
         if (cart.length === 0) return;
         if (!termsAccepted) {
-            alert("Debes aceptar los Términos y Condiciones (Corporate Compliance) antes de proceder al pago.");
+            toast.error("Debes aceptar los Términos y Condiciones (Corporate Compliance) antes de proceder al pago.");
             return;
         }
         setIsStripeLoading(true);
@@ -34,9 +38,8 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     items: cart,
-                    customerEmail: user?.email, // Si está logueado, pre-llenar email en Stripe
-                    userId: user?.id, // Enviar ID de Supabase
-                    destinationUrl: window.location.origin
+                    customerEmail: user?.email,
+                    userId: user?.id,
                 }),
             });
 
@@ -52,7 +55,7 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
             }
         } catch (error) {
             console.error(error);
-            alert("Ocurrió un error al conectar con el servidor de pagos (Stripe).");
+            toast.error("Ocurrió un error al conectar con el servidor de pagos (Stripe).");
         } finally {
             setIsStripeLoading(false);
         }
@@ -64,7 +67,7 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
     const handleWhatsAppCheckout = () => {
         if (cart.length === 0) return;
         if (!termsAccepted) {
-            alert("Debes aceptar los Términos y Condiciones (Corporate Compliance) antes de proceder.");
+            toast.error("Debes aceptar los Términos y Condiciones (Corporate Compliance) antes de proceder.");
             return;
         }
         const phone = "1234567890"; // Reemplazar
@@ -85,7 +88,7 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                     <h2 className="font-serif text-lg font-bold text-white flex items-center gap-2">
                         <i className="fas fa-shopping-bag text-grecia-accent"></i> Tu Bolsa de Compras
                     </h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white transition bg-gray-900 w-8 h-8 rounded-full flex items-center justify-center">
+                    <button onClick={onClose} className="text-gray-400 hover:text-white transition bg-gray-900 w-8 h-8 rounded-full flex items-center justify-center" aria-label="Cerrar carrito de compras">
                         <i className="fas fa-times"></i>
                     </button>
                 </div>
@@ -108,12 +111,12 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
                                     <button
                                         onClick={() => removeFromCart(item.id)}
                                         className="absolute -top-2 -right-2 bg-red-900 border border-red-700 text-white w-6 h-6 rounded-full text-xs opacity-0 group-hover:opacity-100 transition shadow-lg z-10 hover:bg-red-600"
+                                        aria-label={`Eliminar ${item.name} del carrito`}
                                     >
                                         <i className="fas fa-times"></i>
                                     </button>
 
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={item.image} alt={item.name} className="w-20 h-24 object-cover rounded border border-gray-800" />
+                                    <Image src={item.image} alt={item.name} width={80} height={96} className="object-cover rounded border border-gray-800" />
 
                                     <div className="flex-1 flex flex-col justify-between py-1">
                                         <div>
@@ -123,9 +126,9 @@ export default function CartSidebar({ isOpen, onClose }: CartSidebarProps) {
 
                                         <div className="flex items-end justify-between mt-2">
                                             <div className="flex items-center gap-3 bg-black border border-gray-800 rounded px-2 py-1">
-                                                <button onClick={() => updateCartItemQuantity(item.id, item.quantity - 1)} className="text-gray-400 hover:text-white transition w-5 text-center">-</button>
+                                                <button onClick={() => updateCartItemQuantity(item.id, item.quantity - 1)} className="text-gray-400 hover:text-white transition w-5 text-center" aria-label={`Disminuir cantidad de ${item.name}`}>-</button>
                                                 <span className="text-white text-xs font-bold w-4 text-center">{item.quantity}</span>
-                                                <button onClick={() => updateCartItemQuantity(item.id, item.quantity + 1)} className="text-gray-400 hover:text-white transition w-5 text-center">+</button>
+                                                <button onClick={() => updateCartItemQuantity(item.id, item.quantity + 1)} className="text-gray-400 hover:text-white transition w-5 text-center" aria-label={`Aumentar cantidad de ${item.name}`}>+</button>
                                             </div>
                                             <span className="text-white font-bold text-sm">${(item.price * item.quantity).toFixed(2)}</span>
                                         </div>

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { supabase as supabaseAdmin } from '@/lib/supabase';
+import { supabasePublic } from '@/lib/supabase';
 import { createClient } from '@/utils/supabase/server';
+import { isAdmin } from '@/lib/permissions';
 
 // Helper function to verify admin
 async function verifyAdmin() {
@@ -9,7 +10,7 @@ async function verifyAdmin() {
 
     if (!user) return { error: 'Acceso denegado.' };
 
-    if (user.email !== 'greciafashionstore2@gmail.com') {
+    if (!isAdmin(user)) {
         return { error: 'Privilegios insuficientes.' };
     }
     return { success: true };
@@ -29,13 +30,40 @@ export async function POST(request: Request) {
             return NextResponse.json({ success: false, message: 'Ningún archivo enviado.' }, { status: 400 });
         }
 
-        // 3. Preparar metadatos para Supabase
-        const fileExt = file.name.split('.').pop();
+        // 3. ✅ VALIDACIÓN DE SEGURIDAD DEL ARCHIVO
+        const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'avif'];
+        const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+        const fileExt = file.name.split('.').pop()?.toLowerCase();
+
+        if (!fileExt || !ALLOWED_EXTENSIONS.includes(fileExt)) {
+            return NextResponse.json(
+                { success: false, message: `Extensión .${fileExt || '?'} no permitida. Solo: ${ALLOWED_EXTENSIONS.join(', ')}` },
+                { status: 400 }
+            );
+        }
+
+        if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+            return NextResponse.json(
+                { success: false, message: `Tipo MIME "${file.type}" no permitido. Solo imágenes: ${ALLOWED_MIME_TYPES.join(', ')}` },
+                { status: 400 }
+            );
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+            return NextResponse.json(
+                { success: false, message: `Archivo demasiado grande (${(file.size / 1024 / 1024).toFixed(1)}MB). Máximo: 5MB.` },
+                { status: 400 }
+            );
+        }
+
+        // 4. Preparar metadatos para Supabase
         const fileName = `${Math.random().toString(36).substring(2, 15)}-${Date.now()}.${fileExt}`;
         const filePath = `public/${fileName}`;
 
         // 4. Subir a Supabase Storage (Bucket: 'products')
-        const { error: uploadError } = await supabaseAdmin.storage
+        const { error: uploadError } = await supabasePublic.storage
             .from('products')
             .upload(filePath, file, {
                 cacheControl: '3600',
@@ -48,7 +76,7 @@ export async function POST(request: Request) {
         }
 
         // 5. Obtener la URL Pública absoluta generada por Supabase
-        const { data: publicUrlData } = supabaseAdmin.storage
+        const { data: publicUrlData } = supabasePublic.storage
             .from('products')
             .getPublicUrl(filePath);
 

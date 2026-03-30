@@ -35,8 +35,8 @@ export async function updateSession(request: NextRequest) {
 
     // RUTAS PROTEGIDAS /admin
     if (pathname.startsWith('/admin')) {
-        const adminEmail = process.env.ADMIN_EMAIL;
-        if (!user || user.email !== adminEmail) {
+        const { isAdmin } = await import('@/lib/permissions');
+        if (!isAdmin(user)) {
             return NextResponse.redirect(new URL('/', request.url));
         }
     }

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { isAdmin } from '@/lib/permissions';
 
 // Middleware interno para verificar sesion
 async function verifyAdmin() {
@@ -8,8 +9,7 @@ async function verifyAdmin() {
 
     if (!user) return { error: 'Acceso denegado. No hay sesión.' };
 
-    const adminEmail = process.env.ADMIN_EMAIL;
-    if (user.email !== adminEmail) {
+    if (!isAdmin(user)) {
         return { error: 'No autorizado. Se requiere rol de administrador.' };
     }
     return { success: true };

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Hero() {
     return (
@@ -9,11 +10,12 @@ export default function Hero() {
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70 z-10"></div>
                 <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent z-10"></div>
 
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                     src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2070&auto=format&fit=crop"
                     alt="Fashion Model Background"
-                    className="w-full h-full object-cover animate-ken-burns scale-110 origin-center opacity-90"
+                    fill
+                    priority
+                    className="object-cover animate-ken-burns scale-110 origin-center opacity-90"
                 />
             </div>
 

@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import AdminDashboard from "@/app/admin/AdminDashboard"; // Un nuevo Client Component
+import { isAdmin } from "@/lib/permissions";
 
 export default async function AdminPage() {
     // 1. Doble Verificación Server-Side garantizada vía Supabase
@@ -7,7 +8,7 @@ export default async function AdminPage() {
     const { data: { user } } = await supabase.auth.getUser();
 
     // 2. Si no hay usuario o no es el admin designado
-    if (!user || user.email !== "greciafashionstore2@gmail.com") {
+    if (!isAdmin(user)) {
         return (
             <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 text-center">
                 <div className="bg-black/80 border border-red-900 rounded-lg p-10 max-w-lg w-full">

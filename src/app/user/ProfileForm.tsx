@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import type { UserProfileData } from "@/types";
 
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-export default function ProfileForm({ initialData }: { initialData: any }) {
+export default function ProfileForm({ initialData }: { initialData: UserProfileData }) {
     const [name, setName] = useState(initialData?.name || "");
     const [phone, setPhone] = useState(initialData?.phone || "");
     const [address, setAddress] = useState(initialData?.address || "");

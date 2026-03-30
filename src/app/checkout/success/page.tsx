@@ -3,57 +3,20 @@
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 
-import { useAppContext } from "@/context/AppContext";
+import { useCartStore } from "@/store/useCartStore";
 
 export default function CheckoutSuccessPage() {
     const [statusText, setStatusText] = useState("Validando Pago Seguro...");
-    const { clearCart } = useAppContext();
+    const { clearCart } = useCartStore();
     const hasVerified = useRef(false);
 
     useEffect(() => {
         if (hasVerified.current) return;
         hasVerified.current = true;
 
-        const verifyOrder = async () => {
-            try {
-                const urlParams = new URLSearchParams(window.location.search);
-                const sessionId = urlParams.get('session_id');
-
-                if (!sessionId) {
-                    setStatusText("¡Transacción Completada Exitosamente! 🎉");
-                    clearCart();
-                    return;
-                }
-
-                // Leer carrito local antes de borrarlo
-                const currentCart = JSON.parse(localStorage.getItem('grecia-cart') || '[]');
-
-                const response = await fetch('/api/orders/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        sessionId: sessionId,
-                        cartItems: currentCart
-                    })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    setStatusText("¡Transacción Completada Exitosamente! 🎉");
-                    clearCart();
-                } else {
-                    console.error("Stripe Verificaton Failed:", data.error);
-                    setStatusText("Pago Verificado Exitosamente 🎉"); // Ocultar el error al cliente final, el cobro ya pasó.
-                    clearCart();
-                }
-            } catch (error) {
-                console.error("Critical Error al verificar orden:", error);
-                setStatusText("¡Transacción Completada Exitosamente! 🎉");
-            }
-        };
-
-        verifyOrder();
+        // Limpiar el carrito local tras el pago (El Webhook ya se encargó de la Base de Datos)
+        setStatusText("¡Transacción Completada Exitosamente! 🎉");
+        clearCart();
     }, [clearCart]);
 
     return (

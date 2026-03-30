@@ -1,17 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useAppContext } from "@/context/AppContext";
+import Image from "next/image";
+import { useCartStore } from "@/store/useCartStore";
+import { useProductStore } from "@/store/useProductStore";
+import { Product } from "@/types";
 
 export default function Store() {
-    const { products, addToCart } = useAppContext();
+    const { products } = useProductStore();
+    const { addToCart } = useCartStore();
     const [activeCategory, setActiveCategory] = useState<string>("Ver Todo");
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-    /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-    const handleAddToCart = (product: any) => {
+    const handleAddToCart = (product: Product) => {
         addToCart(product);
-        // Opcional: Feedback visual rápido
     };
 
     // Extraer categorías únicas dinámicamente, más la de "Ver Todo"
@@ -58,8 +60,13 @@ export default function Store() {
                         return (
                             <div key={product.id} className="group relative transition duration-[1.5s] animate-fade-in-up flex flex-col">
                                 <div className="relative overflow-hidden mb-5 bg-[#0a0a0a] aspect-[3/4] rounded-[2rem] shadow-xl hover:shadow-[0_20px_40px_rgba(221,167,165,0.08)] transition-all duration-700 cursor-pointer" onClick={() => setSelectedImage(product.image)}>
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={product.image} alt={product.name} className={`w-full h-full object-cover transition duration-[1.5s] ease-[cubic-bezier(0.16,1,0.3,1)] ${isOutOfStock ? 'grayscale opacity-30' : 'group-hover:scale-105 opacity-90 group-hover:opacity-100'}`} />
+                                    <Image
+                                        src={product.image}
+                                        alt={product.name}
+                                        fill
+                                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                                        className={`object-cover transition duration-[1.5s] ease-[cubic-bezier(0.16,1,0.3,1)] ${isOutOfStock ? 'grayscale opacity-30' : 'group-hover:scale-105 opacity-90 group-hover:opacity-100'}`}
+                                    />
 
                                     <div className="absolute inset-0 bg-black/5 group-hover:bg-[#4a2e2d]/20 transition duration-700 z-10 pointer-events-none mix-blend-multiply"></div>
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a]/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition duration-700 z-10 pointer-events-none"></div>
@@ -101,7 +108,8 @@ export default function Store() {
                                             <button
                                                 onClick={(e) => { e.stopPropagation(); setSelectedImage(product.image); }}
                                                 className="bg-black/60 hover:bg-black backdrop-blur-md text-white w-10 h-10 rounded-full flex items-center justify-center transition border border-white/10 pointer-events-auto shadow-lg"
-                                                title="Ver tamaño real">
+                                                title="Ver tamaño real"
+                                                aria-label={`Ver imagen ampliada de ${product.name}`}>
                                                 <i className="fas fa-expand-alt"></i>
                                             </button>
                                         </div>
@@ -156,13 +164,15 @@ export default function Store() {
                                         {!isOutOfStock ? (
                                             <button
                                                 onClick={() => handleAddToCart(product)}
-                                                className="w-full bg-white text-black py-3 font-bold text-[10px] uppercase tracking-[0.15em] hover:bg-grecia-accent hover:text-white transition-all duration-300 rounded-lg shadow-lg">
+                                                className="w-full bg-white text-black py-3 font-bold text-[10px] uppercase tracking-[0.15em] hover:bg-grecia-accent hover:text-white transition-all duration-300 rounded-lg shadow-lg"
+                                                aria-label={`Agregar ${product.name} a la bolsa de compras`}>
                                                 <i className="fas fa-shopping-bag mr-2"></i> Agregar a la Bolsa
                                             </button>
                                         ) : (
                                             <button
                                                 disabled
-                                                className="w-full bg-gray-900/50 text-gray-500 py-3 font-bold text-[10px] uppercase tracking-[0.15em] rounded-lg cursor-not-allowed border border-gray-800">
+                                                className="w-full bg-gray-900/50 text-gray-500 py-3 font-bold text-[10px] uppercase tracking-[0.15em] rounded-lg cursor-not-allowed border border-gray-800"
+                                                aria-label={`${product.name} agotado — no disponible`}>
                                                 Agotado
                                             </button>
                                         )}
@@ -184,11 +194,12 @@ export default function Store() {
                         <i className="fas fa-times text-2xl"></i>
                     </button>
                     <div className="relative w-full h-full max-w-5xl max-h-[85vh] rounded-[2rem] overflow-hidden shadow-[0_0_50px_rgba(221,167,165,0.15)] bg-[#050505]">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <Image
                             src={selectedImage}
                             alt="Vista Ampliada"
-                            className="w-full h-full object-contain"
+                            fill
+                            sizes="90vw"
+                            className="object-contain"
                         />
                     </div>
                 </div>

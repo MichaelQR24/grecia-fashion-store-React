@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       {
@@ -19,15 +21,43 @@ const nextConfig: NextConfig = {
         // Apply these headers to all routes
         source: '/((?!_next/static|_next/image|favicon.ico).*)',
         headers: [
-          { key: 'X-Frame-Options', value: 'DENY' }, // Prevents clickjacking
-          { key: 'X-XSS-Protection', value: '1; mode=block' }, // Enables XSS filtering in older browsers
-          { key: 'X-Content-Type-Options', value: 'nosniff' }, // Disables MIME sniffing
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' }, // Protects referrer info
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()' }
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()' },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com",
+              "img-src 'self' data: blob: https://mnkcadiijsglpjlcahxa.supabase.co https://images.unsplash.com",
+              "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
+              "frame-src https://js.stripe.com https://maps.google.com",
+              "connect-src 'self' https://mnkcadiijsglpjlcahxa.supabase.co wss://mnkcadiijsglpjlcahxa.supabase.co https://api.stripe.com https://*.sentry.io https://*.ingest.sentry.io",
+              "worker-src 'self' blob:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join('; ')
+          },
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
         ],
       },
     ]
   },
 };
 
-export default nextConfig;
+// ✅ R3: Sentry build instrumentation
+// Solo activo si SENTRY_AUTH_TOKEN está definido (no bloquea builds sin él)
+export default withSentryConfig(nextConfig, {
+  // Subida de Source Maps para poder ver stack traces legibles en Sentry
+  org: process.env.SENTRY_ORG || 'grecia-fashion',
+  project: process.env.SENTRY_PROJECT || 'grecia-fashion-store',
+
+  // Silenciar logs del build de Sentry para que no ensucien la consola
+  silent: !process.env.CI,
+
+  // No fallar el build si Sentry no está configurado aún
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+});

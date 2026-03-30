@@ -1,12 +1,35 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { createClient } from '@/utils/supabase/server';
+import { isAdmin } from '@/lib/permissions';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-    apiVersion: '2026-02-25.clover',
-});
+const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+const stripe = stripeKey ? new Stripe(stripeKey, {
+    apiVersion: '2026-02-25.clover' as any,
+}) : null;
+
+// ✅ Verificación de sesión y rol de administrador
+async function verifyAdmin() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return { error: 'Acceso denegado. No hay sesión válida.' };
+
+    if (!isAdmin(user)) {
+        return { error: 'Privilegios insuficientes. Sólo administradores pueden gestionar cupones.' };
+    }
+    return { success: true };
+}
 
 // OBTENER TODOS LOS CÓDIGOS PROMOCIONALES
 export async function GET() {
+    const auth = await verifyAdmin();
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: 403 });
+
+    if (!stripe) {
+        return NextResponse.json([]); // Return empty list if no stripe configured
+    }
+    
     try {
         // Obtenemos los códigos promocionales (incluyen el código real que escribe el cliente)
         const promoCodes = await stripe.promotionCodes.list({ limit: 100, expand: ['data.promotion.coupon'] });
@@ -45,6 +68,10 @@ export async function GET() {
 
 // CREAR NUEVO CÓDIGO PROMOCIONAL EN STRIPE
 export async function POST(req: Request) {
+    const auth = await verifyAdmin();
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: 403 });
+
+    if (!stripe) return NextResponse.json({ error: 'Falta STRIPE_SECRET_KEY en las variables de entorno' }, { status: 500 });
     try {
         const body = await req.json();
         const { code, discountText, maxUses, description, expiryDate } = body;
@@ -113,6 +140,10 @@ export async function POST(req: Request) {
 
 // ACTUALIZAR ESTADO (ACTIVAR/DESACTIVAR) O INVALIDAR
 export async function PATCH(req: Request) {
+    const auth = await verifyAdmin();
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: 403 });
+
+    if (!stripe) return NextResponse.json({ error: 'Falta STRIPE_SECRET_KEY en las variables de entorno' }, { status: 500 });
     try {
         const body = await req.json();
         const { id, active } = body; // "id" aquí es el ID del PromotionCode de Stripe (promo_xxxx)
@@ -133,6 +164,10 @@ export async function PATCH(req: Request) {
 // SÓLO PERMITE DESACTIVARLOS (PATCH a active: false), LO CUAL YA HACEMOS.
 // Pero expondremos la ruta para simplemente "ocultarlo" o ponerlo inactivo.
 export async function DELETE(req: Request) {
+    const auth = await verifyAdmin();
+    if (auth.error) return NextResponse.json({ error: auth.error }, { status: 403 });
+
+    if (!stripe) return NextResponse.json({ error: 'Falta STRIPE_SECRET_KEY en las variables de entorno' }, { status: 500 });
     try {
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
@@ -151,3 +186,4 @@ export async function DELETE(req: Request) {
         return NextResponse.json({ error: (err as Error).message }, { status: 500 });
     }
 }
+

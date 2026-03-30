@@ -3,7 +3,7 @@ import { Playfair_Display, Poppins } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { AppProvider } from "@/context/AppContext";
+import { Toaster } from "react-hot-toast";
 
 const playfair = Playfair_Display({
   variable: "--font-serif",
@@ -31,19 +31,23 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${playfair.variable} ${poppins.variable} scroll-smooth`}>
       <head>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        />
       </head>
       <body className="antialiased font-sans text-white bg-black">
-        <AppProvider>
-          <Header />
-          {children}
-          <Footer />
+        <Toaster position="top-center" toastOptions={{ 
+            style: { background: '#111', color: '#fff', border: '1px solid #333' } 
+        }} />
+        <Header />
+        {children}
+        <Footer />
 
-          {/* Botón Flotante WhatsApp */}
-          <a href="https://wa.me/15512538886?text=Hola,%20quisiera%20asesoría%20sobre%20Grecia%20Fashion" target="_blank" rel="noopener noreferrer" className="float-wa" title="Asesoría Personalizada">
-            <i className="fab fa-whatsapp text-2xl"></i>
-          </a>
-        </AppProvider>
+        {/* Botón Flotante WhatsApp */}
+        <a href="https://wa.me/15512538886?text=Hola,%20quisiera%20asesoría%20sobre%20Grecia%20Fashion" target="_blank" rel="noopener noreferrer" className="float-wa" title="Asesoría Personalizada">
+          <i className="fab fa-whatsapp text-2xl"></i>
+        </a>
       </body>
     </html>
   );
