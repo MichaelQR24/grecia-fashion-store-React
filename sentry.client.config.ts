@@ -17,4 +17,7 @@ Sentry.init({
     environment: process.env.NODE_ENV,
 });
 
-console.log('✅ Sentry Client Initialized with DSN:', process.env.NEXT_PUBLIC_SENTRY_DSN ? 'Present' : 'MISSING');
+if (typeof window !== 'undefined') {
+    console.log('🚀 [SENTRY CLIENT] Intentando inicialización...');
+    console.log('📡 DSN Detectado:', process.env.NEXT_PUBLIC_SENTRY_DSN ? 'SÍ' : 'NO (VACÍO)');
+}
