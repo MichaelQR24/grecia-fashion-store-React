@@ -11,3 +11,5 @@ Sentry.init({
 
     environment: process.env.NODE_ENV,
 });
+
+console.log('✅ Sentry Edge Initialized with DSN:', process.env.SENTRY_DSN ? 'Present' : 'MISSING');

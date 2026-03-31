@@ -67,7 +67,4 @@ export default withSentryConfig(nextConfig, {
 
   // Optimización (evita agotar la RAM durante el build)
   widenClientFileUpload: true,
-
-  // Ruta del túnel para saltar AdBlockers (opcional pero recomendado)
-  tunnelRoute: "/monitoring-sentry",
 });

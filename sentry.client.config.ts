@@ -16,3 +16,5 @@ Sentry.init({
     // Entorno de ejecución
     environment: process.env.NODE_ENV,
 });
+
+console.log('✅ Sentry Client Initialized with DSN:', process.env.NEXT_PUBLIC_SENTRY_DSN ? 'Present' : 'MISSING');
