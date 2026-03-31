@@ -48,7 +48,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     // Evita cargar todos los módulos de estas librerías, ahorrando megabytes en el servidor y acelerando el arranque (Cold Start) en Vercel.
-    optimizePackageImports: ['@sentry/nextjs', 'stripe', 'recharts', 'lucide-react', 'react-hot-toast', '@supabase/supabase-js'],
+    optimizePackageImports: ['stripe', 'recharts', 'lucide-react', 'react-hot-toast', '@supabase/supabase-js'],
   },
 };
 
