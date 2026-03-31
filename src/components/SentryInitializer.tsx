@@ -18,12 +18,7 @@ export default function SentryInitializer() {
 
     const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN;
 
-    if (!dsn) {
-      console.warn('⚠️ Sentry DSN no encontrado en el cliente. Saltando inicialización manual.');
-      return;
-    }
-
-    console.log('🚀 [PLAN B] Despertando Sentry de forma manual en el Layout...');
+    if (!dsn) return;
     
     try {
       Sentry.init({
@@ -35,12 +30,9 @@ export default function SentryInitializer() {
         replaysOnErrorSampleRate: process.env.NODE_ENV === "production" ? 1.0 : 0,
         // Entorno de ejecución
         environment: process.env.NODE_ENV,
-        // Depuración para ver si conecta
-        debug: process.env.NODE_ENV === "development",
       });
-      console.log('✅ Sentry ha despertado manualmente con éxito.');
     } catch (e) {
-      console.error('❌ Error al despertar Sentry manualmente:', e);
+      // Silenciar en producción
     }
   }, []);
 
