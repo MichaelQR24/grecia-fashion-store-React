@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { Toaster } from "react-hot-toast";
+import SentryInitializer from "@/components/SentryInitializer";
 
 const playfair = Playfair_Display({
   variable: "--font-serif",
@@ -40,6 +41,7 @@ export default function RootLayout({
         <Toaster position="top-center" toastOptions={{ 
             style: { background: '#111', color: '#fff', border: '1px solid #333' } 
         }} />
+        <SentryInitializer />
         <Header />
         {children}
         <Footer />
