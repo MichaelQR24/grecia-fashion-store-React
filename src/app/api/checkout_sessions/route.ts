@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import * as Sentry from '@sentry/nextjs';
 import { createClient } from '@/utils/supabase/server';
-import { rateLimit } from '@/lib/rateLimit';
+import { upstashRateLimit } from '@/lib/upstashRateLimit';
 import type { CartItemRequest } from '@/types';
 
 export const runtime = 'edge';
@@ -16,11 +16,16 @@ export async function POST(req: Request) {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
         || req.headers.get('x-real-ip')
         || 'unknown';
-    const limiter = rateLimit(`checkout:${ip}`, 10, 60_000);
-    if (!limiter.allowed) {
+
+    // ✅ R1: Upstash Distributed Rate Limiting (Anti Card-Testing)
+    const { success, reset } = await upstashRateLimit.limit(`checkout:${ip}`);
+    
+    if (!success) {
+        const now = Date.now();
+        const retryAfter = Math.ceil((reset - now) / 1000);
         return NextResponse.json(
-            { error: `Demasiadas solicitudes. Espera ${Math.ceil(limiter.retryAfterMs / 1000)}s antes de reintentar.` },
-            { status: 429, headers: { 'Retry-After': String(Math.ceil(limiter.retryAfterMs / 1000)) } }
+            { error: `Demasiados intentos. Por favor, espera un momento antes de volver a intentar el pago.` },
+            { status: 429, headers: { 'Retry-After': String(retryAfter) } }
         );
     }
 
