@@ -16,10 +16,10 @@ export async function POST(req: Request) {
 
     let event: Stripe.Event;
 
-    // 1. VERIFICAR LA FIRMA CRIPTOGRÁFICA DE STRIPE
+    // 1. VERIFICAR LA FIRMA CRIPTOGRÁFICA DE STRIPE EN MODO ASÍNCRONO (PARA EDGE RUNTIME)
     try {
         const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string;
-        event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+        event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         // ✅ R3: Reportar intento de firma inválida a Sentry (posible ataque)
