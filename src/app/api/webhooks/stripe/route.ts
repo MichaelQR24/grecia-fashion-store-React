@@ -72,17 +72,10 @@ export async function POST(req: Request) {
 
         const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-        // 4. PREVENIR DUPLICACIÓN DE ÓRDENES (IDEMPOTENCIA)
-        const { data: existingOrder } = await supabaseAdmin
-            .from('orders')
-            .select('id')
-            .eq('stripe_session_id', sessionId)
-            .single();
-
-        if (existingOrder) {
-            console.log(`Orden ${existingOrder.id} ya existe para esta sesión. Ignorando evento.`);
-            return NextResponse.json({ received: true }); // Acknowledge to Stripe
-        }
+        // 4. PREVENIR DUPLICACIÓN DE ÓRDENES (IDEMPOTENCIA ATÓMICA)
+        // Eliminado: El SELECT preventivo causa "Race Conditions" bajo webhooks concurrentes.
+        // La restricción de unicidad de la BD ("unique_stripe_session") 
+        // bloqueará las inserciones dobles y arrojara error 23505 automáticamente en el INSERT.
 
         // 5. RECONSTRUIR EL CARRITO DESDE STRIPE DIRECTAMENTE
         const totalAmount = session.amount_total ? session.amount_total / 100 : 0;
@@ -131,7 +124,7 @@ export async function POST(req: Request) {
             customer_phone: customerPhone
         };
 
-        console.log('📝 Procediendo a insertar orden en base de datos...');
+        console.log('📝 Procediendo a insertar orden en base de datos de manera atómica...');
 
         const { data: newOrder, error } = await supabaseAdmin
             .from('orders')
@@ -140,6 +133,12 @@ export async function POST(req: Request) {
             .single();
 
         if (error) {
+            // ✅ R2: Manejo de Idempotencia por Restricción Única ("Race Condition" Mitigation)
+            if (error.code === '23505') { // Postgres code for UNIQUE_VIOLATION
+                console.warn(`🛑 ORDEN DUPLICADA BLOQUEADA: La sesión ${sessionId} ya existe en BD. Evitando re-procesamiento por Webhook Concurrente.`);
+                return NextResponse.json({ received: true }); // Dile a Stripe que ya está salvado, para terminar el reintento
+            }
+
             console.error('❌ Error crítico guardando orden en Supabase:', JSON.stringify(error, null, 2));
             console.error('❌ Detalle: code=' + error.code + ' message=' + error.message + ' details=' + error.details + ' hint=' + error.hint);
             return NextResponse.json({ error: 'Error interno DB' }, { status: 500 });

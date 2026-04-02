@@ -18,8 +18,21 @@ export async function POST(req: Request) {
         || 'unknown';
 
     // ✅ R1: Upstash Distributed Rate Limiting (Anti Card-Testing)
-    const { success, reset } = await upstashRateLimit.limit(`checkout:${ip}`);
-    
+    // Implementación FAIL-CLOSED: Si Redis cae, se bloquea la compra para prevenir robo mediante bots.
+    let success = false;
+    let reset = 0;
+    try {
+        const result = await upstashRateLimit.limit(`checkout:${ip}`);
+        success = result.success;
+        reset = result.reset;
+    } catch (error) {
+        console.error('CRÍTICO: Rate limiter inalcanzable (Fail-Closed activado):', error);
+        return NextResponse.json(
+            { error: 'Sistema de verificación de seguridad temporalmente no disponible. Intente de nuevo más tarde.' },
+            { status: 503 }
+        );
+    }
+
     if (!success) {
         const now = Date.now();
         const retryAfter = Math.ceil((reset - now) / 1000);
@@ -81,8 +94,8 @@ export async function POST(req: Request) {
             };
         });
 
-        // ✅ Usar origin del servidor, NUNCA datos del frontend
-        const origin = new URL(req.url).origin;
+        // ✅ Usar origin estático del servidor para mitigar ataques de Host Header Injection
+        const origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
         // Crear Sesión de Pago Segura en Servidores de Stripe
         const session = await stripe.checkout.sessions.create({

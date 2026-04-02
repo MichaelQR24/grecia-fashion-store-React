@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { jwtVerify } from 'jose';
 
 export async function updateSession(request: NextRequest) {
     let supabaseResponse = NextResponse.next({
@@ -27,16 +28,46 @@ export async function updateSession(request: NextRequest) {
         }
     );
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser();
-
     const { pathname } = request.nextUrl;
+
+    // 🚀 Lógica de Cero-Latencia: Evitar llamadas a API si no es una ruta protegida
+    if (!pathname.startsWith('/admin') && !pathname.startsWith('/user')) {
+        return supabaseResponse;
+    }
+
+    // 🔥 Obtención local para no ahogar a Supabase en concurrencia masiva
+    const { data: { session } } = await supabase.auth.getSession();
+    let user = null;
+    let isAdminRole = false;
+
+    if (session?.access_token) {
+        const secret = process.env.SUPABASE_JWT_SECRET;
+        if (secret) {
+            try {
+                // Decodificación y validación matemática de JWT (0 milisegundos en el Edge)
+                const encodedSecret = new TextEncoder().encode(secret);
+                const { payload } = await jwtVerify(session.access_token, encodedSecret);
+                // @ts-ignore
+                user = { id: payload.sub, user_metadata: payload.user_metadata };
+                // @ts-ignore
+                isAdminRole = payload.user_metadata?.role === 'admin';
+            } catch (err) {
+                console.error('Fallo criptográfico local validando JWT:', err);
+                user = null; // Rechazar acceso si el token fue manipulado (Seguridad activa)
+            }
+        } else {
+            // Fallback en caso de que olvides colocar la variable SUPABASE_JWT_SECRET
+            console.warn('⚠️ SUPABASE_JWT_SECRET indefinido. Haciendo fallback a getUser().');
+            const { data: { user: apiUser } } = await supabase.auth.getUser();
+            user = apiUser;
+            const { isAdmin } = await import('@/lib/permissions');
+            isAdminRole = isAdmin(user);
+        }
+    }
 
     // RUTAS PROTEGIDAS /admin
     if (pathname.startsWith('/admin')) {
-        const { isAdmin } = await import('@/lib/permissions');
-        if (!isAdmin(user)) {
+        if (!user || !isAdminRole) {
             return NextResponse.redirect(new URL('/', request.url));
         }
     }
