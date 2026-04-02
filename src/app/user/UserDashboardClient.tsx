@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   User, 
   MapPin, 
@@ -59,14 +59,12 @@ export default function UserDashboardClient({
 
   const [isSaving, setIsSaving] = useState(false);
   const supabase = createClient();
-
   const scrollRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   const handleSaveDatos = async () => {
     setIsSaving(true);
     const fullName = `${formDatos.nombre} ${formDatos.apellido}`.trim();
     
-    // Fallback de seguridad en caso de que la tabla 'profiles' no tenga ciertas columnas extendidas 
     const fullPayload = {
         full_name: fullName,
         phone: formDatos.telefono,
@@ -75,35 +73,24 @@ export default function UserDashboardClient({
         language: formDatos.idioma
     };
 
-    const basicPayload = {
-        full_name: fullName,
-        phone: formDatos.telefono
-    };
+    const basicPayload = { full_name: fullName, phone: formDatos.telefono };
 
     const { error } = await supabase.from('profiles').update(fullPayload).eq('id', initialUser.id);
     
     if (error) {
-        console.warn("Algunas columnas extendidas (birth_date, etc.) no existen en tu BD. Guardando en modo básico.");
         await supabase.from('profiles').update(basicPayload).eq('id', initialUser.id);
     }
-    
-    await supabase.auth.updateUser({
-        data: { name: fullName, phone: formDatos.telefono }
-    });
+    await supabase.auth.updateUser({ data: { name: fullName, phone: formDatos.telefono } });
     
     setIsSaving(false);
     alert("¡Datos guardados con éxito en la Base de Datos!");
-    window.location.reload(); // Refrescar para asentar el cache
+    window.location.reload(); 
   };
 
   const handleSaveDirecciones = async (newAddresses: any[]) => {
       setDirecciones(newAddresses);
-      try {
-          // Intentar guardar en Supabase si existe el column JSONB `addresses`
-          await supabase.from('profiles').update({ addresses: newAddresses }).eq('id', initialUser.id);
-      } catch(e) {
-          console.warn("Columna 'addresses' podría no existir en Supabase, guardado en memoria local verificado.", e);
-      }
+      try { await supabase.from('profiles').update({ addresses: newAddresses }).eq('id', initialUser.id); } 
+      catch {}
       setAddressForm(null);
   };
 
@@ -121,16 +108,13 @@ export default function UserDashboardClient({
   };
 
   const handleReceipt = (stripeSessionId: string) => {
-     if (!stripeSessionId) {
-        alert("La factura oficial no está disponible para esta orden antigua.");
-        return;
-     }
+     if (!stripeSessionId) return alert("La factura oficial no está disponible para esta orden antigua.");
      window.open(`/api/checkout_sessions/${stripeSessionId}/receipt`, '_blank');
   };
 
-  // Mapeo DIRECTO PARA PRODUCCIÓN.
+  // Mapeo Órdenes
   const mappedOrders = orders?.map(order => {
-      let items = [];
+      let items: any[] = [];
       if (typeof order.cart_items === 'string') {
          try { items = JSON.parse(order.cart_items); } catch(e){}
       } else if (Array.isArray(order.cart_items)) {
@@ -139,19 +123,13 @@ export default function UserDashboardClient({
 
       let mappedStatus = "En Progreso";
       const dbStatus = (order.status || "").toLowerCase();
-      // Verificamos por las palabras 'paid', 'vendido', 'completado', etc.
-      if (['paid', 'pagado', 'completado', 'vendido', 'succeeded'].some(x => dbStatus.includes(x))) {
-         mappedStatus = "Vendido";
-      } else if (dbStatus.includes('cancelado')) {
-         mappedStatus = "Cancelado";
-      } else {
-         mappedStatus = "En Progreso";
-      }
+      if (['paid', 'pagado', 'completado', 'vendido', 'succeeded'].some(x => dbStatus.includes(x))) { mappedStatus = "VENDIDO"; } 
+      else if (dbStatus.includes('cancelado')) { mappedStatus = "CANCELADO"; }
 
       return {
           rawId: order.id,
           stripeSessionId: order.stripe_session_id,
-          id: `#${(order.id || "").split('-')[0].toUpperCase()}`,
+          id: `${(order.id || "").split('-')[0].toUpperCase()}`,
           date: new Date(order.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }),
           total: order.total_amount?.toFixed(2) || "0.00",
           status: mappedStatus,
@@ -160,67 +138,64 @@ export default function UserDashboardClient({
   }) || [];
 
   return (
-    <div className="bg-[#cdb7a6] min-h-screen text-[#382b28] font-sans selection:bg-[#fff0e6] selection:text-black relative overflow-hidden">
+    <div className="bg-[#FAE3E7] min-h-screen font-sans selection:bg-[#251A1C] selection:text-[#FAE3E7] relative pb-20">
       
-      {/* Glows */}
-      <div className="fixed top-[-10%] right-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-[#eadbcc] to-transparent blur-[130px] pointer-events-none opacity-40 z-0 text-transparent">glow</div>
-      <div className="fixed bottom-[-15%] left-[-10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-[#dfcdbe] to-transparent blur-[160px] pointer-events-none opacity-50 z-0 text-transparent">glow</div>
-
-      {/* Navbar Superior Crema Oscura */}
-      <div className="w-full bg-[#e5d5c5]/95 backdrop-blur-xl border-b border-[#c4b3a2] px-8 py-5 flex justify-between items-center sticky top-0 z-50 shadow-md">
-         
-         {/* Logo Integrado de Header Principal ESCALADO */}
-         <div className="flex flex-col items-center sm:items-start group shrink-0">
-            <span className="text-2xl md:text-3xl font-serif font-bold transition-colors flex items-center md:gap-1.5 leading-none">
-              <span className="text-grecia-accent text-[#a44238] italic font-medium pr-1">Grecia</span>
-              <span className="text-[#382b28] hidden sm:inline">Fashion Store</span>
-              <span className="text-[#382b28] sm:hidden">Fashion</span>
-            </span>
-            <span className="text-[9px] md:text-[10px] tracking-[0.4em] uppercase text-[#8c746b] mt-1 ml-1 hidden sm:block">Boutique</span>
+      {/* NAVBAR NEGRO (Basado exactamente en el Screenshot) */}
+      <div className="w-full bg-[#181112] border-b border-[#251A1C] px-8 py-3 flex justify-between items-center sticky top-0 z-50">
+         <div className="flex flex-col group shrink-0">
+            <Link href="/" className="text-xl md:text-2xl font-serif font-bold flex items-center md:gap-1.5 leading-none">
+              <span className="text-[#F6D2D8] italic font-medium pr-1">Grecia</span>
+              <span className="text-white hidden sm:inline">Fashion Store</span>
+              <span className="text-white sm:hidden">Fashion</span>
+            </Link>
+            <span className="text-[8px] md:text-[9px] tracking-[0.4em] uppercase text-gray-500 mt-1 ml-1">Boutique</span>
          </div>
-
          <Link href="/">
-          <button className="flex items-center gap-3 text-[13px] uppercase tracking-[0.2em] font-bold text-[#e5d5c5] bg-[#382b28] hover:bg-black px-8 py-4 rounded-full shadow-lg transition-all border border-black group">
-            <ShoppingBag className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
+          <button className="flex items-center gap-2 text-[10px] md:text-[11px] uppercase tracking-widest font-bold text-[#181112] bg-[#F3CDD3] hover:bg-white px-6 py-2.5 rounded-full transition-all group">
+            <ShoppingBag className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Comprar Nuevamente</span>
           </button>
          </Link>
       </div>
 
-      <main className="max-w-[1400px] mx-auto px-6 sm:px-8 py-14 relative z-10 fade-in">
+      <main className="max-w-[1250px] mx-auto px-6 sm:px-10 py-16 flex flex-col items-center lg:items-start text-[#251A1C]">
         
-        {/* Cabecera Principal */}
-        <div className="mb-12 text-center md:text-left flex flex-col md:flex-row md:items-end justify-between gap-6">
-           <div>
-              <h1 className="text-5xl md:text-7xl font-serif text-[#382b28] font-light tracking-wide mb-4">Mi Perfil</h1>
-              <p className="text-[#382b28]/70 text-lg md:text-xl font-light">Elegancia, compras y ajustes a tu medida.</p>
-           </div>
+        {/* TITULO PAGE */}
+        <div className="w-full lg:pl-[360px] mb-8 text-center lg:text-left fade-in">
+           <h1 className="text-6xl font-serif font-medium tracking-tight mb-2 text-[#221618]">Mi Perfil</h1>
+           <p className="opacity-80 text-lg font-medium text-[#4A3236]">Elegancia, compras y ajustes a tu medida.</p>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-10 lg:gap-16">
+        <div className="w-full flex flex-col lg:flex-row gap-10 lg:gap-12 fade-in">
           
-          {/* SIDEBAR CREMA OSCURA */}
-          <aside className="w-full lg:w-[320px] flex-shrink-0 animate-slide-up">
-            <div className="sticky top-32 bg-[#e5d5c5] rounded-[3rem] p-10 shadow-[0_20px_50px_rgba(100,80,75,0.15)] border border-[#c4b3a2]/50">
+          {/* SIDEBAR OSCURO (Mockup: Espresso Dark #22181A) */}
+          <aside className="w-full lg:w-[320px] flex-shrink-0 relative">
+            {/* Sombras difusas debajo */}
+            <div className="absolute inset-0 bg-[#A45265] opacity-10 blur-[40px] translate-y-10 rounded-[2.5rem]"></div>
+            
+            <div className="relative bg-[#22181A] rounded-[2.5rem] pt-14 pb-10 px-8 shadow-2xl flex flex-col min-h-[600px] border border-[#332528]">
               
-              <div className="flex flex-col items-center mb-12">
-                <div className="relative w-28 h-28 rounded-full border-[3px] border-[#dfcdba] shadow-[0_8px_20px_rgba(0,0,0,0.05)] mb-6 bg-[#f2e7da] p-1 group overflow-hidden">
-                  <div className="w-full h-full rounded-full bg-[#dfcdba] flex items-center justify-center overflow-hidden">
-                     <User className="w-12 h-12 text-[#8c746b] group-hover:scale-110 transition-transform duration-500" strokeWidth={1.5} />
+              <div className="flex flex-col items-center mb-10">
+                <div className="w-24 h-24 rounded-full border border-[#493539] mb-6 flex items-center justify-center p-1 bg-[#22181A]">
+                  <div className="w-full h-full rounded-full flex items-center justify-center bg-[#291D20]">
+                     <User className="w-8 h-8 text-[#FAE3E7]" strokeWidth={1} />
                   </div>
                 </div>
-                <h2 className="font-serif text-3xl text-[#29211f] text-center mb-1">{displayName}</h2>
+                {/* Nombre de usuario partido en dos lineas si es necesario */}
+                <h2 className="font-serif text-[28px] leading-[1.1] text-white text-center">
+                   {firstnameChunk}<br/>{lastnameChunk}
+                </h2>
               </div>
 
-              <nav className="space-y-4">
-                <SidebarSoftItem icon={<ShoppingBag className="w-5 h-5" />} label="Historial de Pedidos" isActive={activeTab === 'pedidos'} onClick={() => setActiveTab('pedidos')} />
-                <SidebarSoftItem icon={<User className="w-5 h-5" />} label="Detalles Personales" isActive={activeTab === 'datos'} onClick={() => setActiveTab('datos')} />
-                <SidebarSoftItem icon={<MapPin className="w-5 h-5" />} label="Mis Direcciones" isActive={activeTab === 'direcciones'} onClick={() => {setActiveTab('direcciones'); setAddressForm(null)}} />
-                <SidebarSoftItem icon={<Settings className="w-5 h-5" />} label="Preferencias" isActive={activeTab === 'preferencias'} onClick={() => setActiveTab('preferencias')} />
+              <nav className="space-y-4 flex-1 w-full">
+                <SidebarItem icon={<ShoppingBag className="w-5 h-5" />} label="Historial de Pedidos" isActive={activeTab === 'pedidos'} onClick={() => setActiveTab('pedidos')} />
+                <SidebarItem icon={<User className="w-5 h-5" />} label="Detalles Personales" isActive={activeTab === 'datos'} onClick={() => setActiveTab('datos')} />
+                <SidebarItem icon={<MapPin className="w-5 h-5" />} label="Mis Direcciones" isActive={activeTab === 'direcciones'} onClick={() => {setActiveTab('direcciones'); setAddressForm(null)}} />
+                <SidebarItem icon={<Settings className="w-5 h-5" />} label="Preferencias" isActive={activeTab === 'preferencias'} onClick={() => setActiveTab('preferencias')} />
               </nav>
 
-              <div className="mt-12 pt-10 border-t border-[#c4b3a2]">
-                <button onClick={handleLogout} className="w-full bg-[#dfcdba] hover:bg-[#d5c0aa] border border-[#c4b3a2]/50 text-[#8c746b] hover:text-[#523d38] py-4 rounded-3xl text-[12px] font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-inner">
+              <div className="mt-8 pt-4 w-full flex justify-center">
+                <button onClick={handleLogout} className="bg-[#FBDFE3] hover:bg-white text-[#221618] py-4 px-8 w-full rounded-full text-[11px] font-extrabold uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl">
                   <LogOut className="w-4 h-4" />
                   <span>Salir de la cuenta</span>
                 </button>
@@ -228,300 +203,251 @@ export default function UserDashboardClient({
             </div>
           </aside>
 
-          {/* MAIN CONTENT AREA */}
-          <section className="flex-1 w-full relative min-h-[600px] z-20">
+          {/* AREA PRINCIPAL */}
+          <section className="flex-1 w-full relative z-20">
             
+            {/* TAB: PEDIDOS */}
             {activeTab === 'pedidos' && (
-              <div className="animate-in fade-in zoom-in-95 duration-700">
+              <div className="animate-in fade-in duration-700 space-y-6">
                 
-                {/* Cabecera Tipo Revista */}
-                <div className="bg-[#e5d5c5] rounded-[2.5rem] p-8 shadow-[0_20px_40px_rgba(100,80,75,0.1)] border border-[#c4b3a2]/50 mb-10 overflow-hidden relative flex items-center justify-between text-[#29211f]">
-                   <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between w-full h-full px-5">
-                      <div>
-                        <h2 className="text-4xl font-serif flex items-center gap-5">
-                           <span className="w-10 h-[1px] bg-[#382b28] inline-block"></span>
-                           Mis Pedidos
-                        </h2>
-                      </div>
-                      <div className="text-[12px] uppercase font-bold text-[#8c746b] tracking-widest mt-5 md:mt-0 bg-[#dfcdba] px-6 py-3 rounded-full shadow-inner border border-[#d1bfab]">
-                         {mappedOrders.length} transacciones
-                      </div>
+                {/* Cabecera Mis Pedidos (Mockup Pill shape, fondo blanco rosado) */}
+                <div className="bg-[#FBDFE3] rounded-full px-8 py-5 shadow-lg border border-[#F2C4CB] flex items-center justify-between">
+                   <h2 className="text-3xl font-serif font-medium flex items-center gap-3 text-[#221618]">
+                      {/* Cuatro puntitos icon */}
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                         <circle cx="12" cy="5" r="1.5" fill="#C48E96"/>
+                         <circle cx="19" cy="12" r="1.5" fill="#C48E96"/>
+                         <circle cx="12" cy="19" r="1.5" fill="#C48E96"/>
+                         <circle cx="5" cy="12" r="1.5" fill="#C48E96"/>
+                      </svg>
+                      Mis Pedidos
+                   </h2>
+                   <div className="text-[10px] uppercase font-bold text-[#4A3236] tracking-widest bg-[#EBBAC3] px-4 py-2 rounded-full border border-[#DC9AA4]">
+                      {mappedOrders.length} transacciones
                    </div>
                 </div>
 
-                <div className="space-y-10">
+                <div className="space-y-8 mt-8">
                   {mappedOrders.length > 0 ? mappedOrders.map((order: any, idx: number) => {
-                    
-                    let statusColor = "bg-[#d8e3d6] text-[#4d6657] border-[#bcccb8]"; // Vendido Default Verde
-                    if (order.status === 'Cancelado') {
-                        statusColor = "bg-[#eacbd0] text-[#8a4d56] border-[#cfadb2]";
-                    } else if (order.status === 'En Progreso') {
-                        statusColor = "bg-[#e5dfc5] text-[#736c4b] border-[#c9c1a1]";
-                    }
-
                     return (
-                      <div key={idx} className="bg-[#e5d5c5] border border-[#d1bfab] rounded-[2.5rem] p-8 md:p-10 shadow-[0_15px_40px_rgba(100,80,75,0.1)] hover:shadow-[0_25px_60px_rgba(100,80,75,0.15)] transition-all duration-500 relative group text-[#29211f]">
-                        <div className="flex flex-col gap-10">
-                          {/* Información destacable */}
-                          <div className="w-full flex justify-between items-start border-b border-[#c4b3a2]/40 pb-8">
+                      <div key={idx} className="bg-[#291F21] rounded-[2rem] p-8 shadow-xl flex flex-col relative text-white border border-[#382B2E]">
+                         
+                         {/* Card Header (Mockup) */}
+                         <div className="w-full flex justify-between items-start mb-6">
                             <div>
-                               <p className="text-[#8c746b] text-[12px] uppercase tracking-widest mb-2 font-bold">
-                                 Factura <span className="text-[#382b28] text-sm ml-2">{order.id}</span>
+                               <p className="text-[#C4A9AD] text-[10px] uppercase tracking-widest font-extrabold mb-1">
+                                 Factura <span className="text-white ml-1">#{order.id}</span>
                                </p>
-                               <p className="text-[#523d38] text-sm font-medium flex items-center gap-2">
-                                 <span className="w-2 h-2 bg-[#dca592] rounded-full inline-block"></span>
+                               <p className="text-gray-400 text-xs font-medium flex items-center gap-2">
+                                 <span className="w-1.5 h-1.5 bg-gray-400 rounded-full inline-block"></span>
                                  {order.date}
                                </p>
                             </div>
                             
-                            <div className="text-right flex flex-col items-end gap-2.5">
-                               <div className={`px-5 py-2 rounded-full text-[11px] font-extrabold uppercase tracking-widest shadow-sm border w-max ${statusColor}`}>
+                            <div className="flex flex-col items-end gap-3">
+                               <div className="px-4 py-1.5 rounded-full text-[9px] font-extrabold uppercase tracking-widest border border-gray-500 text-gray-300 w-max">
                                  {order.status}
                                </div>
-                               <p className="font-serif text-5xl text-[#1a1210] tracking-tight font-medium drop-shadow-sm mt-1">${order.total}</p>
                             </div>
-                          </div>
+                         </div>
 
-                          <div className="flex flex-col xl:flex-row gap-12 xl:gap-8 items-end">
+                         {/* Body Card */}
+                         <div className="flex flex-col md:flex-row items-end md:items-center justify-between mt-4">
                             
-                            <div className="w-full xl:w-1/4">
-                              <button onClick={() => handleReceipt(order.stripeSessionId)} className="w-full text-[#e5d5c5] bg-[#382b28] hover:bg-black px-7 py-4 rounded-full transition-all text-[11px] font-extrabold tracking-widest uppercase shadow-md hover:shadow-lg flex items-center justify-center gap-3 border border-[#1a1210] mb-2">
-                                Ver Recibo <ArrowRight className="w-4 h-4" />
-                              </button>
+                            {/* Images and Details area */}
+                            <div className="flex items-center gap-6 w-full md:w-auto">
+                               {order.images[0] ? (
+                                  <div className="w-28 h-28 rounded-2xl overflow-hidden bg-[#1D1416] border border-[#382B2D] flex-shrink-0">
+                                     <img src={order.images[0]} alt="Articulo" className="w-full h-full object-cover" />
+                                  </div>
+                               ) : (
+                                  <div className="w-28 h-28 rounded-2xl bg-[#1D1416] border border-[#382B2D] flex items-center justify-center flex-shrink-0">
+                                     <ShoppingBag className="w-8 h-8 text-gray-600" />
+                                  </div>
+                               )}
+                               
+                               <div className="flex flex-col hidden sm:flex">
+                                  {/* As we don't have detailed item name mappings directly exposed easily without mapping, we show a generic title if array, or simply the first item */}
+                                  <h4 className="text-white font-medium text-lg leading-tight mb-2">Artículos de Boutique</h4>
+                                  <p className="text-gray-400 text-sm">{order.date}</p>
+                                  {order.images.length > 1 && (
+                                     <p className="text-[#C4A9AD] text-xs font-bold mt-2 tracking-widest uppercase">+{order.images.length - 1} más</p>
+                                  )}
+                               </div>
                             </div>
 
-                            <div className="w-full xl:w-3/4 relative flex items-center pb-2">
-                              {order.images.length > 2 && (
-                                <button 
-                                  onClick={() => scrollCarousel(order.rawId, 'left')}
-                                  className="absolute -left-6 z-30 bg-[#e5d5c5] border border-[#d1bfab] text-[#29211f] hover:text-white hover:bg-[#382b28] hover:scale-110 w-12 h-12 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 shadow-[0_10px_30px_rgba(0,0,0,0.15)]"
-                                >
-                                  <ChevronLeft className="w-5 h-5 ml-[-2px]" strokeWidth={2} />
-                                </button>
-                              )}
-                              
-                              <div 
-                                ref={(el) => { scrollRefs.current[order.rawId] = el; }}
-                                className="flex gap-4 md:gap-6 overflow-x-auto flex-1 pb-6 pt-4 hide-scrollbar scroll-smooth px-1"
-                              >
-                                {order.images.length > 0 ? order.images.map((img: string, i: number) => (
-                                  <div key={i} className="flex-shrink-0 w-44 sm:w-52 aspect-[3/4] rounded-[2rem] overflow-hidden relative group/img cursor-pointer shadow-[0_15px_30px_rgba(0,0,0,0.08)] bg-[#dfcdba] border border-[#c4b3a2]">
-                                    <img src={img} alt="Artículo" className="w-full h-full object-cover transition-transform duration-[1.5s] group-hover/img:scale-[1.08]" />
-                                  </div>
-                                )) : (
-                                  <div className="w-full text-center py-10">
-                                     <ShoppingBag className="w-8 h-8 text-[#c4b3a2] mx-auto mb-3 opacity-50" />
-                                     <p className="text-[12px] uppercase tracking-widest text-[#8c746b] font-bold">Sin imágenes de carrito</p>
-                                  </div>
-                                )}
-                              </div>
+                            {/* Actions & Repeated Price Area */}
+                            <div className="flex items-end md:items-center gap-6 md:gap-14 mt-6 md:mt-0 w-full md:w-auto justify-between md:justify-end">
+                               <button onClick={() => handleReceipt(order.stripeSessionId)} className="bg-[#FBDFE3] text-[#221618] px-6 py-3.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest hover:bg-white transition-colors flex items-center gap-2 shadow-md">
+                                 Ver Recibo <ArrowRight className="w-3.5 h-3.5" strokeWidth={3} />
+                               </button>
 
-                              {order.images.length > 2 && (
-                                <button 
-                                  onClick={() => scrollCarousel(order.rawId, 'right')}
-                                  className="absolute -right-6 z-30 bg-[#e5d5c5] border border-[#d1bfab] text-[#29211f] hover:text-white hover:bg-[#382b28] hover:scale-110 w-12 h-12 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-all duration-500 shadow-[0_10px_30px_rgba(0,0,0,0.15)]"
-                                >
-                                  <ChevronRight className="w-5 h-5 mr-[-2px]" strokeWidth={2} />
-                                </button>
-                              )}
+                               {/* El precio replicado que aparece abajo a la derecha en el mockup */}
+                               <p className="font-serif text-[42px] leading-none text-white tracking-tight hidden sm:block">
+                                 <span className="text-3xl mr-1">$</span>{order.total}
+                               </p>
                             </div>
-                          </div>
-                        </div>
+                         </div>
+
                       </div>
                     );
                   }) : (
-                     <div className="text-center py-28 bg-[#e5d5c5] border border-[#d1bfab] rounded-[3rem] shadow-sm">
-                        <ShoppingBag className="w-14 h-14 mx-auto text-[#dfcdba] mb-8" />
-                        <p className="font-serif text-4xl text-[#382b28]/60 font-light tracking-wide mb-5">Aún sin pedidos</p>
-                        <p className="text-[13px] text-[#382b28]/50 uppercase tracking-widest mb-12">Ve de compras para llenar tu ropero exclusivo.</p>
+                     <div className="text-center py-20 bg-[#291F21] border border-[#382B2E] rounded-[2rem] shadow-xl">
+                        <ShoppingBag className="w-12 h-12 mx-auto text-[#C4A9AD] mb-6 opacity-60" />
+                        <p className="font-serif text-3xl text-white tracking-wide mb-4">No hay transacciones</p>
+                        <p className="text-xs text-gray-400 uppercase tracking-widest mb-10">Tu historia de moda comienza aquí.</p>
                         <Link href="/">
-                          <button className="bg-[#382b28] hover:bg-black px-12 py-5 text-[#e5d5c5] text-[13px] tracking-[0.2em] font-extrabold uppercase transition-colors rounded-full shadow-lg">Ir a la Boutique</button>
+                          <button className="bg-[#FBDFE3] text-[#221618] hover:bg-white px-10 py-4 text-[11px] tracking-widest font-extrabold uppercase transition-colors rounded-full">Ir a la Boutique</button>
                         </Link>
+                     </div>
+                  )}
+
+                  {mappedOrders.length > 0 && (
+                     <div className="text-right mt-4">
+                        <button className="text-[10px] font-bold text-[#4A3236] uppercase tracking-widest hover:text-black flex items-center gap-1 justify-end w-full">
+                           Ver Más <ChevronRight className="w-3 h-3" />
+                        </button>
                      </div>
                   )}
                 </div>
               </div>
             )}
 
-            {/* DEMAS PESTAÑAS (Datos Personales) */}
+            {/* TAB: DATOS PERSONALES */}
             {activeTab === 'datos' && (
-              <div className="animate-in fade-in zoom-in-95 duration-700 max-w-4xl">
-                <div className="bg-[#e5d5c5] rounded-[3rem] p-12 md:p-16 border border-[#d1bfab] shadow-[0_20px_50px_rgba(100,80,75,0.15)] text-[#29211f]">
-                  <div className="mb-14 border-b border-[#c4b3a2] pb-10 text-center md:text-left">
-                    <h2 className="text-4xl font-serif mb-3">Mi Identidad</h2>
-                    <p className="text-[#8c746b] text-[13px] uppercase tracking-widest font-bold">Tus coordenadas de elegancia.</p>
+              <div className="animate-in fade-in duration-700 bg-[#22181A] rounded-[2.5rem] p-10 md:p-14 shadow-2xl border border-[#332528] text-white">
+                <div className="mb-10 border-b border-[#382B2E] pb-8">
+                  <h2 className="text-4xl font-serif mb-2">Detalles Personales</h2>
+                  <p className="text-[#C4A9AD] text-[11px] uppercase tracking-widest font-bold">Información de cuenta y contacto</p>
+                </div>
+                
+                <form className="space-y-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+                    <InputOscuro label="Nombre" value={formDatos.nombre} onChange={(v: string) => setFormDatos({...formDatos, nombre: v})} />
+                    <InputOscuro label="Apellidos" value={formDatos.apellido} onChange={(v: string) => setFormDatos({...formDatos, apellido: v})} />
+                    <div className="col-span-1 md:col-span-2">
+                       <InputOscuro label="Correo Electrónico (No editable)" value={initialUser.email} type="email" readOnly />
+                    </div>
+                    <InputOscuro label="Teléfono" value={formDatos.telefono} type="tel" onChange={(v: string) => setFormDatos({...formDatos, telefono: v})} />
+                    <InputOscuro label="Nacimiento" value={formDatos.fecha_nacimiento} type="date" onChange={(v: string) => setFormDatos({...formDatos, fecha_nacimiento: v})} />
                   </div>
 
-                  <form className="space-y-14">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-14 gap-y-12">
-                      <InputSuave label="Primer Nombre" value={formDatos.nombre} onChange={(v: string) => setFormDatos({...formDatos, nombre: v})} />
-                      <InputSuave label="Apellidos" value={formDatos.apellido} onChange={(v: string) => setFormDatos({...formDatos, apellido: v})} />
-                      <div className="col-span-1 md:col-span-2">
-                        <InputSuave label="Correo Electrónico (No editable)" value={initialUser.email} type="email" readOnly />
-                      </div>
-                      <InputSuave label="Teléfono de Contacto" value={formDatos.telefono} type="tel" onChange={(v: string) => setFormDatos({...formDatos, telefono: v})} />
-                      <InputSuave label="Fecha de Nacimiento" value={formDatos.fecha_nacimiento} type="date" onChange={(v: string) => setFormDatos({...formDatos, fecha_nacimiento: v})} />
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-6 pt-16 border-t border-[#c4b3a2]">
-                      <button 
-                         type="button" 
-                         onClick={handleSaveDatos} 
-                         disabled={!hasChanges || isSaving}
-                         className={`px-12 py-5 rounded-full transition-all text-[12px] font-extrabold tracking-widest uppercase shadow-lg min-w-[220px] border 
-                            ${(!hasChanges || isSaving) 
-                               ? 'bg-[#c4b3a2] text-[#8c746b] border-[#bda695] cursor-not-allowed shadow-none' 
-                               : 'bg-[#382b28] hover:bg-black text-[#e5d5c5] border-[#1a1210] cursor-pointer'
-                            }
-                         `}
-                      >
-                        {isSaving ? "Guardando..." : "Actualizar Datos"}
-                      </button>
-                      <button type="button" className="bg-[#dfcdba] border border-[#c4b3a2] hover:bg-[#d5c0aa] text-[#523d38] px-12 py-5 rounded-full transition-colors text-[12px] font-extrabold tracking-widest uppercase shadow-inner">
-                        Cambiar Contraseña
-                      </button>
-                    </div>
-                  </form>
-                </div>
+                  <div className="flex gap-5 pt-8 border-t border-[#382B2E]">
+                    <button type="button" onClick={handleSaveDatos} disabled={!hasChanges || isSaving} className={`px-10 py-4 rounded-full text-[11px] font-extrabold tracking-widest uppercase transition-colors ${(!hasChanges || isSaving) ? 'bg-[#382B2E] text-gray-500' : 'bg-[#FBDFE3] text-[#22181A] hover:bg-white'} `}>
+                       Guardar Cambios
+                    </button>
+                  </div>
+                </form>
               </div>
             )}
             
-            {/* DIRECCIONES */}
+            {/* TAB: DIRECCIONES */}
             {activeTab === 'direcciones' && (
-              <div className="animate-in fade-in zoom-in-95 duration-700">
+              <div className="animate-in fade-in duration-700 space-y-8">
                 
                 {addressForm ? (
-                   // FORMULARIO DE EDICION O CREACION DE DIRECCION
-                   <div className="bg-[#e5d5c5] rounded-[3rem] p-12 md:p-16 shadow-lg border border-[#d1bfab] max-w-4xl">
-                     <h3 className="text-4xl font-serif text-[#29211f] mb-10 pb-6 border-b border-[#c4b3a2] flex items-center gap-4">
-                         <MapPin className="w-8 h-8 text-[#8c746b]" />
-                         {addressForm.id ? "Editar Dirección" : "Nueva Dirección"}
-                     </h3>
-                     <div className="space-y-10">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                   <div className="bg-[#22181A] rounded-[2.5rem] p-10 md:p-14 shadow-2xl border border-[#332528] text-white">
+                     <h3 className="text-3xl font-serif mb-8 flex items-center gap-3"><MapPin className="w-6 h-6 text-[#C4A9AD]" /> {addressForm.id ? "Editar" : "Añadir"} Dirección</h3>
+                     <div className="space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                            <div className="md:col-span-2">
-                             <InputSuave label="Título (Ej. Casa, Trabajo, Estudio)" value={addressForm.title || ""} onChange={(v: string) => setAddressForm({...addressForm, title: v})} />
+                             <InputOscuro label="Título" value={addressForm.title || ""} onChange={(v: string) => setAddressForm({...addressForm, title: v})} />
                            </div>
                            <div className="md:col-span-2">
-                              <InputSuave label="Dirección Principal (Calle, Nro, Urb)" value={addressForm.line1 || ""} onChange={(v: string) => setAddressForm({...addressForm, line1: v})} />
+                              <InputOscuro label="Calle, Av, Nro" value={addressForm.line1 || ""} onChange={(v: string) => setAddressForm({...addressForm, line1: v})} />
                            </div>
-                           <InputSuave label="Distrito / Referencia" value={addressForm.line2 || ""} onChange={(v: string) => setAddressForm({...addressForm, line2: v})} />
-                           <InputSuave label="Ciudad / País" value={addressForm.city || ""} onChange={(v: string) => setAddressForm({...addressForm, city: v})} />
+                           <InputOscuro label="Distrito / Ref" value={addressForm.line2 || ""} onChange={(v: string) => setAddressForm({...addressForm, line2: v})} />
+                           <InputOscuro label="Ciudad / País" value={addressForm.city || ""} onChange={(v: string) => setAddressForm({...addressForm, city: v})} />
                         </div>
                         
-                        <div className="flex items-center justify-between p-8 bg-[#dfcdba] rounded-3xl border border-[#c4b3a2]/50 mt-6 shadow-sm">
+                        <div className="flex items-center justify-between bg-[#1D1416] p-6 rounded-2xl border border-[#382B2E]">
                            <div>
-                              <p className="text-[17px] text-[#382b28] font-serif font-bold">Establecer como Principal</p>
-                              <p className="text-[13px] text-[#8c746b]">Se usará por defecto en tus compras.</p>
+                              <p className="text-[15px] font-serif font-bold">Principal</p>
+                              <p className="text-[11px] text-gray-400">Default para compras</p>
                            </div>
-                           <ToggleElegante checked={addressForm.isDefault} onChange={(checked: boolean) => setAddressForm({...addressForm, isDefault: checked})} />
+                           <ToggleDark checked={addressForm.isDefault} onChange={(checked: boolean) => setAddressForm({...addressForm, isDefault: checked})} />
                         </div>
                         
-                        <div className="flex flex-col sm:flex-row gap-6 pt-12 border-t border-[#c4b3a2]">
+                        <div className="flex gap-4 pt-6">
                            <button onClick={() => {
-                               if(!addressForm.title || !addressForm.line1) return alert("El título y la dirección principal son obligatorios");
+                               if(!addressForm.title || !addressForm.line1) return alert("Título y dirección obligatorios");
                                let updated;
                                let curr = {...addressForm};
-                               if (curr.id) {
-                                   updated = direcciones.map(d => d.id === curr.id ? curr : d);
-                               } else {
-                                   updated = [...direcciones, { ...curr, id: Date.now().toString() }];
-                               }
-                               if (curr.isDefault) {
-                                   updated = updated.map(d => d.id === curr.id ? d : { ...d, isDefault: false });
-                               }
+                               if (curr.id) updated = direcciones.map(d => d.id === curr.id ? curr : d);
+                               else updated = [...direcciones, { ...curr, id: Date.now().toString() }];
+                               if (curr.isDefault) updated = updated.map(d => d.id === curr.id ? d : { ...d, isDefault: false });
                                handleSaveDirecciones(updated);
-                           }} className="bg-[#382b28] text-[#e5d5c5] px-12 py-5 rounded-full text-[12px] uppercase font-extrabold tracking-widest hover:bg-black transition-colors shadow-md">
-                               Guardar Dirección
+                           }} className="bg-[#FBDFE3] text-[#22181A] px-10 py-4 rounded-full text-[11px] font-extrabold uppercase tracking-widest hover:bg-white">
+                               Guardar
                            </button>
-                           <button onClick={() => setAddressForm(null)} className="bg-transparent border border-[#c4b3a2] px-12 py-5 rounded-full text-[12px] uppercase font-bold tracking-widest hover:bg-[#dfcdba] hover:text-[#523d38] transition-colors">
-                               Descartar
+                           <button onClick={() => setAddressForm(null)} className="border border-[#493539] text-gray-300 px-10 py-4 rounded-full text-[11px] font-bold uppercase tracking-widest hover:bg-[#382B2E]">
+                               Volver
                            </button>
                         </div>
                      </div>
                   </div>
                 ) : (
-                   // LISTADO DE DIRECCIONES
                    <>
-                    <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-8">
-                      <div>
-                        <h2 className="text-4xl font-serif text-[#382b28]">Directorio</h2>
-                        <p className="text-[#8c746b] text-[13px] uppercase tracking-widest font-bold mt-2">Destinos de envío para tus compras.</p>
-                      </div>
-                      <button onClick={() => setAddressForm({ isDefault: direcciones.length === 0 })} className="bg-[#e5d5c5] border border-[#d1bfab] text-[#29211f] font-bold px-8 py-5 rounded-full hover:shadow-lg hover:bg-[#fff7ed] transition-all text-[12px] uppercase tracking-widest shadow-[0_5px_15px_rgba(100,80,75,0.1)] flex items-center gap-3">
-                        <Plus className="w-5 h-5" /> Agregar Nueva
+                    <div className="flex justify-between items-center mb-8 bg-[#FBDFE3] rounded-full px-8 py-5 shadow-lg border border-[#F2C4CB]">
+                      <h2 className="text-3xl font-serif text-[#221618]">Direcciones</h2>
+                      <button onClick={() => setAddressForm({ isDefault: direcciones.length === 0 })} className="bg-[#22181A] text-white font-bold px-6 py-2.5 rounded-full border border-[#332528] text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-[#3A282C]">
+                        <Plus className="w-4 h-4" /> Añadir
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                      {direcciones.length > 0 ? direcciones.map((dir, i) => (
-                        <div key={i} className={`bg-[#e5d5c5] border ${dir.isDefault ? 'border-[#382b28]' : 'border-[#d1bfab]'} rounded-[3rem] p-12 shadow-[0_15px_40px_rgba(100,80,75,0.1)] relative group hover:shadow-[0_20px_50px_rgba(100,80,75,0.15)] transition-all text-[#29211f]`}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      {direcciones.length > 0 && direcciones.map((dir, i) => (
+                        <div key={i} className={`bg-[#291F21] border ${dir.isDefault ? 'border-[#C4A9AD]' : 'border-[#382B2E]'} rounded-[2rem] p-8 relative flex flex-col text-white shadow-xl`}>
                           
                           {dir.isDefault && (
-                            <div className="absolute top-8 right-8 text-[#e5d5c5] text-[11px] font-extrabold uppercase tracking-widest bg-[#382b28] px-5 py-2.5 rounded-full shadow-sm">
+                            <div className="absolute top-6 right-6 text-[#22181A] text-[9px] font-extrabold uppercase tracking-widest bg-[#C4A9AD] px-4 py-1.5 rounded-full">
                               Principal
                             </div>
                           )}
 
-                          <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-8 text-[#8c746b] border ${dir.isDefault ? 'bg-[#dfcdba] border-[#c4b3a2]' : 'bg-transparent border-[#c4b3a2]'}`}>
-                            <MapPin className="w-6 h-6" strokeWidth={1.5} />
-                          </div>
-
-                          <h3 className="text-3xl font-serif text-[#1a1210] mb-3">{dir.title}</h3>
-                          <p className="text-[#523d38] text-[15px] leading-relaxed font-normal mb-10">
+                          <h3 className="text-2xl font-serif mb-2">{dir.title}</h3>
+                          <p className="text-gray-400 text-sm leading-relaxed mb-8 flex-1">
                              {dir.line1}<br/>
-                             {dir.line2 && <>{dir.line2}<br/></>}
+                           {dir.line2 && <>{dir.line2}<br/></>}
                              {dir.city}
                           </p>
                           
-                          <div className="flex gap-5 border-t border-[#c4b3a2]/40 pt-8">
-                            <button onClick={() => setAddressForm(dir)} className="text-[#29211f] font-bold text-[12px] uppercase tracking-widest bg-[#dfcdba] px-8 py-3.5 rounded-full hover:bg-[#d5c0aa] transition-colors border border-[#c4b3a2]/50 shadow-inner">
-                               Editar
-                            </button>
+                          <div className="flex gap-3">
+                            <button onClick={() => setAddressForm(dir)} className="text-white text-[10px] font-bold uppercase tracking-widest bg-[#382B2E] px-6 py-2.5 rounded-full hover:bg-[#493539]">Editar</button>
                             <button onClick={() => {
-                                if(window.confirm("¿Estás segura de eliminar esta dirección?")) {
+                                if(window.confirm("¿Segura de eliminar dirección?")) {
                                    handleSaveDirecciones(direcciones.filter(d => d.id !== dir.id));
                                 }
-                            }} className="text-[#a44238] font-bold text-[12px] uppercase tracking-widest bg-[#e6cecb] px-8 py-3.5 rounded-full hover:bg-[#d4afa9] transition-colors border border-[#c9ada9] shadow-inner">
-                               Eliminar
-                            </button>
+                            }} className="text-[#ff5c5c] text-[10px] uppercase tracking-widest bg-transparent border border-[#ff5c5c]/30 px-6 py-2.5 rounded-full hover:bg-[#1D1416]">Eliminar</button>
                           </div>
                         </div>
-                      )) : (
-                         <div className="col-span-2 text-center py-28 bg-[#e5d5c5]/50 border border-dashed border-[#c4b3a2] rounded-[3rem]">
-                            <MapPin className="w-12 h-12 mx-auto text-[#c4b3a2] mb-5" />
-                            <p className="font-serif text-3xl text-[#8c746b] mb-3">Sin direcciones guardadas</p>
-                            <p className="text-[#a28e85] text-[13px] uppercase tracking-widest">Agrega tu primera dirección de entrega.</p>
-                         </div>
-                      )}
+                      ))}
                     </div>
                    </>
                 )}
               </div>
             )}
 
-            {/* PREFERENCIAS */}
+            {/* TAB: PREFERENCIAS */}
             {activeTab === 'preferencias' && (
-              <div className="animate-in fade-in zoom-in-95 duration-700 max-w-3xl">
-                <div className="bg-[#e5d5c5] rounded-[3rem] p-12 md:p-16 border border-[#d1bfab] shadow-[0_20px_50px_rgba(100,80,75,0.15)] text-[#29211f]">
-                  <h2 className="text-4xl font-serif mb-12 border-b border-[#c4b3a2] pb-8">Sensaciones</h2>
+              <div className="animate-in fade-in duration-700 bg-[#22181A] rounded-[2.5rem] p-10 md:p-14 border border-[#332528] shadow-2xl text-white">
+                <h2 className="text-4xl font-serif mb-10 border-b border-[#382B2E] pb-6">Preferencias</h2>
+                
+                <div className="space-y-6">
+                  <div className="bg-[#1D1416] rounded-2xl p-6 border border-[#382B2E] flex justify-between items-center">
+                     <div>
+                        <h3 className="font-serif text-xl mb-1">Boletines Exclusivos</h3>
+                        <p className="text-xs text-gray-500">Recibe ofertas y nuevas colecciones.</p>
+                     </div>
+                     <ToggleDark defaultChecked={true} />
+                  </div>
                   
-                  <div className="space-y-6">
-                    <div className="bg-[#dfcdba] rounded-3xl p-8 shadow-sm border border-[#c4b3a2] flex items-center justify-between hover:shadow-md transition-shadow">
-                       <div>
-                          <h3 className="font-serif text-2xl mb-2 mt-1">Boletines & Desfiles</h3>
-                          <p className="text-[14px] text-[#8c746b]">Ser la primera en saber todo.</p>
-                       </div>
-                       <ToggleElegante defaultChecked={true} />
-                    </div>
-                    
-                    <div className="bg-[#dfcdba] rounded-3xl p-8 shadow-sm border border-[#c4b3a2] flex items-center justify-between hover:shadow-md transition-shadow">
-                       <div>
-                          <h3 className="font-serif text-2xl mb-2 mt-1">SMS de Pedidos</h3>
-                          <p className="text-[14px] text-[#8c746b]">Seguimiento a tiempo real.</p>
-                       </div>
-                       <ToggleElegante defaultChecked={true} />
-                    </div>
+                  <div className="bg-[#1D1416] rounded-2xl p-6 border border-[#382B2E] flex justify-between items-center">
+                     <div>
+                        <h3 className="font-serif text-xl mb-1">Notificaciones SMS</h3>
+                        <p className="text-xs text-gray-500">Alertas de tracking para tus pedidos.</p>
+                     </div>
+                     <ToggleDark defaultChecked={false} />
                   </div>
                 </div>
               </div>
@@ -531,79 +457,64 @@ export default function UserDashboardClient({
       </main>
 
       <style dangerouslySetInnerHTML={{__html: `
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus, input:-webkit-autofill:active{
+            -webkit-box-shadow: 0 0 0 30px #1D1416 inset !important;
+            -webkit-text-fill-color: #ffffff !important;
         }
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover, 
-        input:-webkit-autofill:focus, 
-        input:-webkit-autofill:active{
-            -webkit-box-shadow: 0 0 0 30px #dfcdba inset !important;
-            -webkit-text-fill-color: #29211f !important;
-            transition: background-color 5000s ease-in-out 0s;
-        }
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(0.2) sepia(0.3) saturate(0.5) hue-rotate(330deg);
-            cursor: pointer;
-        }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
       `}} />
     </div>
   );
 }
 
-// Sub Componentes 
-function SidebarSoftItem({ label, icon, isActive, onClick }: any) {
+// === COMPONENTES SECUNDARIOS ADAPTADOS A FIGMA ===
+
+function SidebarItem({ label, icon, isActive, onClick }: any) {
   return (
     <button 
       onClick={onClick}
-      className={`w-full flex items-center gap-5 px-8 py-5 rounded-3xl transition-all duration-300 group
-        ${isActive ? 'bg-[#dfcdba] text-[#29211f] shadow-inner font-bold border border-[#c4b3a2]' : 'bg-transparent text-[#8c746b] hover:bg-[#dfcdba]/50 hover:text-[#523d38] font-medium border border-transparent'}
+      className={`w-full flex items-center justify-between px-6 py-4 rounded-3xl transition-all duration-300 group outline-none
+        ${isActive ? 'bg-[#332629] border border-[#493539] text-[#FBDFE3]' : 'bg-transparent text-gray-400 hover:text-white'}
       `}
     >
-      <div className={`${isActive ? 'text-[#382b28]' : 'text-[#a28e85] overflow-hidden group-hover:scale-110 group-hover:text-[#523d38] transition-all'}`}>
-        {icon}
+      <div className="flex items-center gap-4">
+        <div className={`${isActive ? 'text-[#C4A9AD]' : 'text-gray-500 group-hover:text-white'}`}>
+          {icon}
+        </div>
+        <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-left">
+          {label}
+        </span>
       </div>
-      <span className="text-[13px] uppercase tracking-widest">
-        {label}
-      </span>
-      {isActive && <ChevronRight className="w-4 h-4 ml-auto text-[#382b28]" />}
+      {isActive && <ChevronRight className="w-4 h-4 text-[#FBDFE3]" strokeWidth={1.5} />}
     </button>
   );
 }
 
-function InputSuave({ label, value, onChange, type = "text", readOnly }: any) {
+function InputOscuro({ label, value, onChange, type = "text", readOnly }: any) {
   return (
-    <div className="flex flex-col group relative">
-      <label className="text-[#8c746b] text-[11px] font-extrabold uppercase tracking-widest mb-3 transition-colors group-focus-within:text-[#29211f] pl-5">{label}</label>
+    <div className="flex flex-col group">
+      <label className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2 pl-4 transition-colors group-focus-within:text-[#FBDFE3]">{label}</label>
       <input 
         type={type} 
         value={value}
         onChange={(e) => onChange && onChange(e.target.value)}
         readOnly={readOnly}
-        className={`w-full bg-[#dfcdba] rounded-[1.5rem] px-6 py-5 text-[#29211f] outline-none focus:bg-[#ebd8c5] focus:shadow-[0_10px_20px_rgba(0,0,0,0.1)] focus:ring-1 focus:ring-[#c4b3a2] transition-all font-medium text-base
-          ${readOnly ? 'opacity-70 cursor-not-allowed border border-[#d1bfab]' : 'shadow-inner border border-[#c4b3a2]/50 hover:border-[#b4a08f]'}
+        className={`w-full bg-[#1D1416] rounded-full px-6 py-4 text-white text-sm outline-none transition-all border
+          ${readOnly ? 'opacity-60 cursor-not-allowed border-[#2B1F22]' : 'border-[#382B2E] focus:border-[#FBDFE3] hover:border-[#493539]'}
         `}
       />
     </div>
   );
 }
 
-function ToggleElegante({ defaultChecked, checked, onChange }: any) {
+function ToggleDark({ defaultChecked, checked, onChange }: any) {
   return (
     <label className="relative inline-flex items-center cursor-pointer group">
-      <input 
-        type="checkbox" 
-        className="sr-only peer" 
-        defaultChecked={defaultChecked} 
-        checked={checked}
-        onChange={(e) => onChange && onChange(e.target.checked)}
-      />
-      <div className="w-14 h-7 bg-[#cfbeac] peer-focus:outline-none relative rounded-full transition-colors peer-checked:bg-[#382b28] shadow-inner border border-[#bfae9c]">
-         <div className="w-6 h-6 bg-[#e5d5c5] border border-[#a69584] rounded-full absolute top-[1px] left-[2px] peer-checked:left-[30px] peer-checked:border-[#1a1210] transition-all duration-300 shadow-sm flex items-center justify-center"></div>
+      <input type="checkbox" className="sr-only peer" defaultChecked={defaultChecked} checked={checked} onChange={(e) => onChange && onChange(e.target.checked)} />
+      <div className="w-12 h-6 bg-[#1A1214] peer-focus:outline-none rounded-full peer-checked:bg-[#FBDFE3] border border-[#382B2E] transition-colors">
+         <div className="w-4 h-4 bg-gray-400 peer-checked:bg-[#22181A] rounded-full absolute top-[3px] left-[4px] peer-checked:left-[28px] transition-all duration-300"></div>
       </div>
     </label>
   );
