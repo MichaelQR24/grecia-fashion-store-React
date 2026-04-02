@@ -8,6 +8,7 @@ import { useCartStore } from "@/store/useCartStore";
 import CartSidebar from "@/components/cart/CartSidebar";
 import { createClient } from "@/utils/supabase/client";
 import { isAdmin } from "@/lib/permissions";
+import { usePathname } from "next/navigation";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -15,6 +16,7 @@ export default function Header() {
   const [loginModalOpen, setLoginModalOpen] = useState(false);
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -126,7 +128,8 @@ export default function Header() {
 
   return (
     <>
-      <header className={`fixed w-full top-0 z-40 transition-all duration-700 ${isScrolled ? "bg-black/98 border-b border-gray-900 backdrop-blur-xl shadow-2xl" : "bg-gradient-to-b from-black/80 via-black/40 to-transparent"}`}>
+      {pathname !== "/user" && (
+        <header className={`fixed w-full top-0 z-40 transition-all duration-700 ${isScrolled ? "bg-black/98 border-b border-gray-900 backdrop-blur-xl shadow-2xl" : "bg-gradient-to-b from-black/80 via-black/40 to-transparent"}`}>
 
         {/* Top Banner (Desaparece al Scrollear) */}
         <div className={`bg-grecia-accent text-white flex justify-between items-center font-medium tracking-wider uppercase transition-all duration-500 overflow-hidden ${isScrolled ? "h-0 opacity-0" : "h-8 md:h-10 px-4 opacity-100"}`}>
@@ -258,6 +261,7 @@ export default function Header() {
           )}
         </div>
       </header >
+      )}
 
 
 
