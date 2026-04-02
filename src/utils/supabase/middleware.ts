@@ -48,9 +48,9 @@ export async function updateSession(request: NextRequest) {
                 const encodedSecret = new TextEncoder().encode(secret);
                 const { payload } = await jwtVerify(session.access_token, encodedSecret);
                 // @ts-ignore
-                user = { id: payload.sub, user_metadata: payload.user_metadata };
+                user = { id: payload.sub, user_metadata: payload.user_metadata, app_metadata: payload.app_metadata };
                 // @ts-ignore
-                isAdminRole = payload.user_metadata?.role === 'admin';
+                isAdminRole = payload.app_metadata?.role === 'admin';
             } catch (err) {
                 console.error('Fallo criptográfico local validando JWT:', err);
                 user = null; // Rechazar acceso si el token fue manipulado (Seguridad activa)

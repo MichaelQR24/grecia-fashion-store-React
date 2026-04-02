@@ -2,10 +2,11 @@ import { User } from '@supabase/supabase-js';
 
 /**
  * Verifica si un usuario tiene privilegios de administrador.
- * Depende exclusivamente de los metadatos del usuario en Supabase.
+ * Depende exclusivamente de los metadatos de aplicación (app_metadata) en Supabase.
  * 
- * Para otorgar acceso de admin, asignar en Supabase:
- *   user_metadata.role = 'admin'
+ * NOTA DE SEGURIDAD: 
+ * NUNCA uses user_metadata para seguridad porque el usuario puede modificarlo.
+ * app_metadata solo puede ser modificado por el back-end o mediante el servicio rol (Administrador).
  * 
  * @param user El objeto de usuario autenticado de Supabase
  * @returns true si el usuario es administrador, false en caso contrario
@@ -13,6 +14,6 @@ import { User } from '@supabase/supabase-js';
 export function isAdmin(user: User | null | undefined): boolean {
     if (!user) return false;
 
-    // ✅ Única fuente de verdad: user_metadata.role asignado en Supabase
-    return user.user_metadata?.role === 'admin';
+    // ✅ Única fuente de verdad infalsificable: app_metadata.role
+    return user.app_metadata?.role === 'admin';
 }
