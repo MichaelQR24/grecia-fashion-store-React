@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from "react";
 import { useCartStore } from "@/store/useCartStore";
 
 export default function CheckoutSuccessPage() {
-    const [statusText, setStatusText] = useState("Validando Pago Seguro...");
+    const [statusText] = useState("¡Transacción Completada Exitosamente! 🎉");
     const { clearCart } = useCartStore();
     const hasVerified = useRef(false);
 
@@ -15,7 +15,6 @@ export default function CheckoutSuccessPage() {
         hasVerified.current = true;
 
         // Limpiar el carrito local tras el pago (El Webhook ya se encargó de la Base de Datos)
-        setStatusText("¡Transacción Completada Exitosamente! 🎉");
         clearCart();
     }, [clearCart]);
 

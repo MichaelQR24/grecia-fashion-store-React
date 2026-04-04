@@ -1,6 +1,7 @@
 'use client';
 
 import * as Sentry from '@sentry/nextjs';
+import Link from 'next/link';
 
 export default function SentryTestPage() {
   const triggerClientError = () => {
@@ -10,8 +11,8 @@ export default function SentryTestPage() {
 
   const triggerCaughtException = () => {
     try {
-      const obj = {} as any;
-      console.log(obj.nonExistentMethod());
+      const obj = {} as Record<string, () => void>;
+      console.log(obj.nonExistentMethod?.());
     } catch (error) {
       console.log('Capturando excepción manualmente y enviando a Sentry...');
       Sentry.captureException(error, {
@@ -53,8 +54,8 @@ export default function SentryTestPage() {
         </button>
       </div>
 
-      <div style={{ marginTop: '50px' }}>
-        <a href="/" style={{ color: '#7f8c8d' }}>Volver al Inicio</a>
+      <div className="mt-[50px]">
+        <Link href="/" className="text-[#7f8c8d]">Volver al Inicio</Link>
       </div>
     </div>
   );

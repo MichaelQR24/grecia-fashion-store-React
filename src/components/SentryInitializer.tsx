@@ -11,7 +11,7 @@ import * as Sentry from '@sentry/nextjs';
 export default function SentryInitializer() {
   useEffect(() => {
     // Si ya existe Sentry inicializado en el navegador, no hagamos nada
-    if (window && (window as any).__SENTRY__) {
+    if (window && (window as unknown as { __SENTRY__: unknown }).__SENTRY__) {
       console.log('✅ Sentry ya estaba registrado en el navegador.');
       return;
     }
@@ -31,7 +31,7 @@ export default function SentryInitializer() {
         // Entorno de ejecución
         environment: process.env.NODE_ENV,
       });
-    } catch (e) {
+    } catch {
       // Silenciar en producción
     }
   }, []);

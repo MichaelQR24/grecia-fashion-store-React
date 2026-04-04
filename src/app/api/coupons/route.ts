@@ -5,7 +5,7 @@ import { isAdmin } from '@/lib/permissions';
 
 const stripeKey = process.env.STRIPE_SECRET_KEY || '';
 const stripe = stripeKey ? new Stripe(stripeKey, {
-    apiVersion: '2026-02-25.clover' as any,
+    apiVersion: '2026-02-25.clover',
 }) : null;
 
 // ✅ Verificación de sesión y rol de administrador
