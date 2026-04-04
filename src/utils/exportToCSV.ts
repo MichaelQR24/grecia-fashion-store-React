@@ -1,6 +1,6 @@
 import toast from "react-hot-toast";
 
-/* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+// Utility to export order data to CSV for external auditing
 export const exportToCSV = (data: Record<string, unknown>[], filename: string) => {
     if (!data || !data.length) {
         toast.error("No hay datos para exportar.");

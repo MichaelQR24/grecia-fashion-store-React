@@ -107,9 +107,8 @@ export async function POST(req: Request) {
             }
 
             cartItems.push({
-                //@ts-ignore -> Metadato especial de descuento
                 isMetadata: true, type: 'discount_info', code: couponCode, amount: discountAmount
-            });
+            } as DiscountMetadata);
         }
 
         // 6. INSERTAR LA ORDEN SEGURA SALTANDO EL RLS
