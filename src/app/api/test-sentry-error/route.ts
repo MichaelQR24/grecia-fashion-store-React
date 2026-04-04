@@ -7,8 +7,7 @@ export async function GET() {
     
     // Provocar un error de referencia para que Sentry lo capture automáticamente
     try {
-        // @ts-ignore
-        const result = serverUndefinedFunction();
+        const result = (global as unknown as Record<string, () => void>).serverUndefinedFunction?.();
         return NextResponse.json({ success: true, result });
     } catch (error) {
         console.error('Error en API capturado:', error);

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { exportToCSV } from "@/utils/exportToCSV";
 import type { WebhookCartItem } from "@/types";
+import Image from "next/image";
 
 // ----------------------------------------------------------------------
 // SUB-COMPONENTE: GESTIÓN DE PEDIDOS Y ESTADOS
@@ -209,11 +210,14 @@ export default function OrdersDashboard() {
                                             {realItems.map((item: WebhookCartItem, idx: number) => (
                                                 <div key={idx} className="flex items-center gap-3 bg-[#111] border border-gray-800/50 rounded-lg p-2 hover:border-gray-700 transition">
                                                     {item.image ? (
-                                                        <img
-                                                            src={item.image}
-                                                            alt={item.name}
-                                                            className="w-12 h-12 object-cover rounded-md border border-gray-800 flex-shrink-0"
-                                                        />
+                                                        <div className="w-12 h-12 relative flex-shrink-0">
+                                                            <Image
+                                                                src={item.image}
+                                                                alt={item.name}
+                                                                fill
+                                                                className="object-cover rounded-md border border-gray-800"
+                                                            />
+                                                        </div>
                                                     ) : (
                                                         <div className="w-12 h-12 bg-gray-900 rounded-md border border-gray-800 flex items-center justify-center flex-shrink-0">
                                                             <i className="fas fa-image text-gray-700"></i>

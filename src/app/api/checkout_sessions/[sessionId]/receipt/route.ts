@@ -7,11 +7,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
     apiVersion: '2026-02-25.clover',
 });
 
-export async function GET(req: Request, context: any) {
+export async function GET(req: Request, context: { params: Promise<{ sessionId: string }> }) {
     try {
         // En Next.js >14, parameters pueden ser asincrónicos, 
         // o si falla por destructuración extraemos desde la URL para mayor confiabilidad
-        let sessionId = context?.params?.sessionId;
+        const { sessionId: paramId } = await context.params;
+        let sessionId: string | undefined = paramId;
         
         if (!sessionId) {
             const url = new URL(req.url);
@@ -31,8 +32,7 @@ export async function GET(req: Request, context: any) {
             expand: ['payment_intent.latest_charge']
         });
 
-        // @ts-ignore
-        const charge = session.payment_intent?.latest_charge;
+        const charge = (session.payment_intent as Stripe.PaymentIntent | null)?.latest_charge as Stripe.Charge | null;
 
         if (charge && charge.receipt_url) {
             return NextResponse.redirect(charge.receipt_url);
@@ -49,13 +49,14 @@ export async function GET(req: Request, context: any) {
                 </html>
             `, { status: 404, headers: { 'Content-Type': 'text/html' }});
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
         console.error('Error obteniendo recibo de Stripe:', error);
         return new NextResponse(`
                 <html>
                 <body style="font-family: sans-serif; padding: 40px; text-align: center; color: #382b28; background: #eacbd0;">
                     <h2>Fallo de Conexión a Stripe</h2>
-                    <p>${error.message || 'La sesión proporcionada podría ser inválida o muy antigua.'}</p>
+                    <p>${errorMessage || 'La sesión proporcionada podría ser inválida o muy antigua.'}</p>
                     <button onclick="window.close()" style="margin-top:20px; padding: 10px 20px; background: #382b28; color: #e5d5c5; border: none; border-radius: 20px; cursor: pointer;">Cerrar Pestaña</button>
                 </body>
                 </html>

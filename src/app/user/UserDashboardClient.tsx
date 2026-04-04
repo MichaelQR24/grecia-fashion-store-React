@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { 
   User, 
   MapPin, 
@@ -8,22 +8,56 @@ import {
   Settings, 
   LogOut, 
   ChevronRight, 
-  ChevronLeft,
   ArrowRight,
   Plus
 } from 'lucide-react';
 import { createClient } from "@/utils/supabase/client";
 import Link from 'next/link';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+
+interface Address {
+  id: string;
+  isDefault: boolean;
+  title: string;
+  line1: string;
+  line2?: string;
+  city: string;
+}
+
+interface UserProfile {
+  full_name?: string;
+  phone?: string;
+  birth_date?: string;
+  gender?: string;
+  language?: string;
+  addresses?: Address[];
+}
+
+interface UserAuth {
+  id: string;
+  email?: string;
+}
+
+interface Order {
+  id: string;
+  created_at: string;
+  total_amount: number;
+  stripe_session_id: string;
+  status?: string;
+  cart_items: string | unknown[];
+}
 
 export default function UserDashboardClient({ 
     initialUser, 
     initialProfile, 
     orders 
 }: { 
-    initialUser: any, 
-    initialProfile: any, 
-    orders: any[] 
+    initialUser: UserAuth, 
+    initialProfile: UserProfile, 
+    orders: Order[] 
 }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('pedidos');
   
   // Procesamos los nombres para asegurar de que siempre usemos lo que hay en la BD
@@ -48,18 +82,17 @@ export default function UserDashboardClient({
 
   const firstnameChunk = formDatos.nombre.trim().split(" ")[0] || "";
   const lastnameChunk = formDatos.apellido.trim().split(" ")[0] || "";
-  const displayName = `${firstnameChunk} ${lastnameChunk}`.trim() || "Usuario";
 
   // CRUD Direcciones
-  const [direcciones, setDirecciones] = useState<any[]>(initialProfile?.addresses || [
+  const [direcciones, setDirecciones] = useState<Address[]>(initialProfile?.addresses || [
     { id: '1', isDefault: true, title: 'Casa', line1: 'Av. Las Flores 123', line2: 'San Juan de Lurigancho', city: 'Lima, Perú' },
     { id: '2', isDefault: false, title: 'Estudio', line1: 'Av. Javier Prado Este 456', line2: 'San Isidro, Piso 5', city: 'Lima, Perú' }
   ]);
-  const [addressForm, setAddressForm] = useState<any>(null); // null = Modo vista, object = Modo edicion/creacion
+  const [addressForm, setAddressForm] = useState<Address | null>(null); // null = Modo vista, object = Modo edicion/creacion
 
   const [isSaving, setIsSaving] = useState(false);
   const supabase = createClient();
-  const scrollRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
 
   const handleSaveDatos = async () => {
     setIsSaving(true);
@@ -87,24 +120,16 @@ export default function UserDashboardClient({
     window.location.reload(); 
   };
 
-  const handleSaveDirecciones = async (newAddresses: any[]) => {
+  const handleSaveDirecciones = async (newAddresses: Address[]) => {
       setDirecciones(newAddresses);
       try { await supabase.from('profiles').update({ addresses: newAddresses }).eq('id', initialUser.id); } 
-      catch {}
+      catch { /* Error silent fallback */ }
       setAddressForm(null);
   };
 
   const handleLogout = async () => {
       await supabase.auth.signOut();
-      window.location.href = '/';
-  };
-
-  const scrollCarousel = (id: string, direction: 'left' | 'right') => {
-    const el = scrollRefs.current[id];
-    if (el) {
-      const scrollAmount = 350;
-      el.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
-    }
+      router.push('/');
   };
 
   const handleReceipt = (stripeSessionId: string) => {
@@ -114,9 +139,9 @@ export default function UserDashboardClient({
 
   // Mapeo Órdenes
   const mappedOrders = orders?.map(order => {
-      let items: any[] = [];
+      let items: unknown[] = [];
       if (typeof order.cart_items === 'string') {
-         try { items = JSON.parse(order.cart_items); } catch(e){}
+         try { items = JSON.parse(order.cart_items); } catch { /* JSON error */ }
       } else if (Array.isArray(order.cart_items)) {
          items = order.cart_items;
       }
@@ -133,7 +158,7 @@ export default function UserDashboardClient({
           date: new Date(order.created_at).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' }),
           total: order.total_amount?.toFixed(2) || "0.00",
           status: mappedStatus,
-          images: items.filter((item: any) => item.image).map((item: any) => item.image)
+          images: (items as { image?: string }[]).filter((item) => item.image).map((item) => item.image as string)
       };
   }) || [];
 
@@ -228,7 +253,7 @@ export default function UserDashboardClient({
                 </div>
 
                 <div className="space-y-8 mt-8">
-                  {mappedOrders.length > 0 ? mappedOrders.map((order: any, idx: number) => {
+                  {mappedOrders.length > 0 ? mappedOrders.map((order, idx: number) => {
                     return (
                       <div key={idx} className="bg-[#291F21] rounded-[2rem] p-8 shadow-xl flex flex-col relative text-white border border-[#382B2E]">
                          
@@ -257,8 +282,8 @@ export default function UserDashboardClient({
                             {/* Images and Details area */}
                             <div className="flex items-center gap-6 w-full md:w-auto">
                                {order.images[0] ? (
-                                  <div className="w-28 h-28 rounded-2xl overflow-hidden bg-[#1D1416] border border-[#382B2D] flex-shrink-0">
-                                     <img src={order.images[0]} alt="Articulo" className="w-full h-full object-cover" />
+                                  <div className="w-28 h-28 rounded-2xl overflow-hidden bg-[#1D1416] border border-[#382B2D] flex-shrink-0 relative">
+                                     <Image src={order.images[0]} alt="Articulo" fill className="object-cover" />
                                   </div>
                                ) : (
                                   <div className="w-28 h-28 rounded-2xl bg-[#1D1416] border border-[#382B2D] flex items-center justify-center flex-shrink-0">
@@ -326,7 +351,7 @@ export default function UserDashboardClient({
                     <InputOscuro label="Nombre" value={formDatos.nombre} onChange={(v: string) => setFormDatos({...formDatos, nombre: v})} />
                     <InputOscuro label="Apellidos" value={formDatos.apellido} onChange={(v: string) => setFormDatos({...formDatos, apellido: v})} />
                     <div className="col-span-1 md:col-span-2">
-                       <InputOscuro label="Correo Electrónico (No editable)" value={initialUser.email} type="email" readOnly />
+                       <InputOscuro label="Correo Electrónico (No editable)" value={initialUser.email || ""} type="email" readOnly />
                     </div>
                     <InputOscuro label="Teléfono" value={formDatos.telefono} type="tel" onChange={(v: string) => setFormDatos({...formDatos, telefono: v})} />
                     <InputOscuro label="Nacimiento" value={formDatos.fecha_nacimiento} type="date" onChange={(v: string) => setFormDatos({...formDatos, fecha_nacimiento: v})} />
@@ -347,17 +372,17 @@ export default function UserDashboardClient({
                 
                 {addressForm ? (
                    <div className="bg-[#22181A] rounded-[2.5rem] p-10 md:p-14 shadow-2xl border border-[#332528] text-white">
-                     <h3 className="text-3xl font-serif mb-8 flex items-center gap-3"><MapPin className="w-6 h-6 text-[#C4A9AD]" /> {addressForm.id ? "Editar" : "Añadir"} Dirección</h3>
+                     <h3 className="text-3xl font-serif mb-8 flex items-center gap-3"><MapPin className="w-6 h-6 text-[#C4A9AD]" /> {addressForm?.id ? "Editar" : "Añadir"} Dirección</h3>
                      <div className="space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                            <div className="md:col-span-2">
-                             <InputOscuro label="Título" value={addressForm.title || ""} onChange={(v: string) => setAddressForm({...addressForm, title: v})} />
+                             <InputOscuro label="Título" value={addressForm?.title || ""} onChange={(v: string) => setAddressForm({...addressForm!, title: v})} />
                            </div>
                            <div className="md:col-span-2">
-                              <InputOscuro label="Calle, Av, Nro" value={addressForm.line1 || ""} onChange={(v: string) => setAddressForm({...addressForm, line1: v})} />
+                              <InputOscuro label="Calle, Av, Nro" value={addressForm?.line1 || ""} onChange={(v: string) => setAddressForm({...addressForm!, line1: v})} />
                            </div>
-                           <InputOscuro label="Distrito / Ref" value={addressForm.line2 || ""} onChange={(v: string) => setAddressForm({...addressForm, line2: v})} />
-                           <InputOscuro label="Ciudad / País" value={addressForm.city || ""} onChange={(v: string) => setAddressForm({...addressForm, city: v})} />
+                           <InputOscuro label="Distrito / Ref" value={addressForm?.line2 || ""} onChange={(v: string) => setAddressForm({...addressForm!, line2: v})} />
+                           <InputOscuro label="Ciudad / País" value={addressForm?.city || ""} onChange={(v: string) => setAddressForm({...addressForm!, city: v})} />
                         </div>
                         
                         <div className="flex items-center justify-between bg-[#1D1416] p-6 rounded-2xl border border-[#382B2E]">
@@ -365,16 +390,16 @@ export default function UserDashboardClient({
                               <p className="text-[15px] font-serif font-bold">Principal</p>
                               <p className="text-[11px] text-gray-400">Default para compras</p>
                            </div>
-                           <ToggleDark checked={addressForm.isDefault} onChange={(checked: boolean) => setAddressForm({...addressForm, isDefault: checked})} />
+                           <ToggleDark checked={addressForm?.isDefault || false} onChange={(checked: boolean) => setAddressForm({...addressForm!, isDefault: checked})} />
                         </div>
                         
                         <div className="flex gap-4 pt-6">
                            <button onClick={() => {
                                if(!addressForm.title || !addressForm.line1) return alert("Título y dirección obligatorios");
                                let updated;
-                               let curr = {...addressForm};
+                               const curr: Address = {...addressForm!};
                                if (curr.id) updated = direcciones.map(d => d.id === curr.id ? curr : d);
-                               else updated = [...direcciones, { ...curr, id: Date.now().toString() }];
+                               else updated = [...direcciones, { ...curr, id: crypto.randomUUID() }];
                                if (curr.isDefault) updated = updated.map(d => d.id === curr.id ? d : { ...d, isDefault: false });
                                handleSaveDirecciones(updated);
                            }} className="bg-[#FBDFE3] text-[#22181A] px-10 py-4 rounded-full text-[11px] font-extrabold uppercase tracking-widest hover:bg-white">
@@ -390,7 +415,7 @@ export default function UserDashboardClient({
                    <>
                     <div className="flex justify-between items-center mb-8 bg-[#FBDFE3] rounded-full px-8 py-5 shadow-lg border border-[#F2C4CB]">
                       <h2 className="text-3xl font-serif text-[#221618]">Direcciones</h2>
-                      <button onClick={() => setAddressForm({ isDefault: direcciones.length === 0 })} className="bg-[#22181A] text-white font-bold px-6 py-2.5 rounded-full border border-[#332528] text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-[#3A282C]">
+                      <button onClick={() => setAddressForm({ id: '', title: '', line1: '', city: '', isDefault: direcciones.length === 0 })} className="bg-[#22181A] text-white font-bold px-6 py-2.5 rounded-full border border-[#332528] text-[10px] uppercase tracking-widest flex items-center gap-2 hover:bg-[#3A282C]">
                         <Plus className="w-4 h-4" /> Añadir
                       </button>
                     </div>
@@ -471,7 +496,7 @@ export default function UserDashboardClient({
 
 // === COMPONENTES SECUNDARIOS ADAPTADOS A FIGMA ===
 
-function SidebarItem({ label, icon, isActive, onClick }: any) {
+function SidebarItem({ label, icon, isActive, onClick }: { label: string, icon: React.ReactNode, isActive: boolean, onClick: () => void }) {
   return (
     <button 
       onClick={onClick}
@@ -492,14 +517,14 @@ function SidebarItem({ label, icon, isActive, onClick }: any) {
   );
 }
 
-function InputOscuro({ label, value, onChange, type = "text", readOnly }: any) {
+function InputOscuro({ label, value, onChange, type = "text", readOnly }: { label: string, value: string, onChange?: (v: string) => void, type?: string, readOnly?: boolean }) {
   return (
     <div className="flex flex-col group">
       <label className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-2 pl-4 transition-colors group-focus-within:text-[#FBDFE3]">{label}</label>
       <input 
         type={type} 
         value={value}
-        onChange={(e) => onChange && onChange(e.target.value)}
+        onChange={(event) => onChange && onChange(event.target.value)}
         readOnly={readOnly}
         className={`w-full bg-[#1D1416] rounded-full px-6 py-4 text-white text-sm outline-none transition-all border
           ${readOnly ? 'opacity-60 cursor-not-allowed border-[#2B1F22]' : 'border-[#382B2E] focus:border-[#FBDFE3] hover:border-[#493539]'}
@@ -509,10 +534,10 @@ function InputOscuro({ label, value, onChange, type = "text", readOnly }: any) {
   );
 }
 
-function ToggleDark({ defaultChecked, checked, onChange }: any) {
+function ToggleDark({ defaultChecked, checked, onChange }: { defaultChecked?: boolean, checked?: boolean, onChange?: (c: boolean) => void }) {
   return (
     <label className="relative inline-flex items-center cursor-pointer group">
-      <input type="checkbox" className="sr-only peer" defaultChecked={defaultChecked} checked={checked} onChange={(e) => onChange && onChange(e.target.checked)} />
+      <input type="checkbox" className="sr-only peer" defaultChecked={defaultChecked} checked={checked} onChange={(event) => onChange && onChange(event.target.checked)} />
       <div className="w-12 h-6 bg-[#1A1214] peer-focus:outline-none rounded-full peer-checked:bg-[#FBDFE3] border border-[#382B2E] transition-colors">
          <div className="w-4 h-4 bg-gray-400 peer-checked:bg-[#22181A] rounded-full absolute top-[3px] left-[4px] peer-checked:left-[28px] transition-all duration-300"></div>
       </div>

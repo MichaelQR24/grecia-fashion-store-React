@@ -7,7 +7,6 @@ import { useProductStore } from "@/store/useProductStore";
 import { useCartStore } from "@/store/useCartStore";
 import CartSidebar from "@/components/cart/CartSidebar";
 import { createClient } from "@/utils/supabase/client";
-import { isAdmin } from "@/lib/permissions";
 import { usePathname } from "next/navigation";
 
 export default function Header() {
