@@ -68,3 +68,5 @@ export default withSentryConfig(nextConfig, {
   // Optimización (evita agotar la RAM durante el build)
   widenClientFileUpload: true,
 });
+
+import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());
